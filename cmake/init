@@ -1,0 +1,20 @@
+
+# Create Makefile
+
+cat << END > Makefile
+
+default:	build
+
+clean:
+	rm -rf Makefile $LNX_OBJS
+
+build:
+	cd $LNX_OBJS && \$(MAKE)
+
+.PHONY: test
+test:
+	cd $LNX_OBJS && \$(MAKE) test
+
+install:
+	cd $LNX_OBJS && \$(MAKE) install
+END

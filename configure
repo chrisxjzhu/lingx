@@ -1,0 +1,16 @@
+#!/bin/sh
+
+export LC_ALL=C
+
+. cmake/options
+. cmake/init
+
+mkdir -p $LNX_OBJS
+
+cd $LNX_OBJS
+cmake -DLNX_BUILD_TEST=1 \
+      -DLNX_CONFIGURE="$LNX_CONFIGURE" \
+      -DLNX_PREFIX="$LNX_PREFIX" \
+      -DLNX_CONF_PATH="$LNX_CONF_PATH" \
+      -DLNX_ERROR_LOG_PATH="$LNX_ERROR_LOG_PATH" \
+      ..

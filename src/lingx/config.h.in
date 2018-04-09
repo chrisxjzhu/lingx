@@ -1,0 +1,24 @@
+#ifndef _LINGX_CONFIG_H
+#define _LINGX_CONFIG_H
+
+#ifndef LNX_CONFIGURE
+#define LNX_CONFIGURE  "@LNX_CONFIGURE@"
+#endif
+
+#ifndef LNX_COMPILER
+#define LNX_COMPILER  "@LNX_COMPILER@"
+#endif
+
+#ifndef LNX_PREFIX
+#define LNX_PREFIX  "@LNX_PREFIX@"
+#endif
+
+#ifndef LNX_CONF_PATH
+#define LNX_CONF_PATH  "@LNX_CONF_PATH@"
+#endif
+
+#ifndef LNX_ERROR_LOG_PATH
+#define LNX_ERROR_LOG_PATH  "@LNX_ERROR_LOG_PATH@"
+#endif
+
+#endif

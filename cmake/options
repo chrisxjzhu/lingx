@@ -1,0 +1,54 @@
+
+help=no
+
+LNX_PREFIX=
+LNX_CONF_PATH=
+LNX_ERROR_LOG_PATH=
+
+LNX_OBJS=objs
+
+CXX=${CXX:-c++}
+
+opt=
+
+for option
+do
+    opt="$opt `echo $option | sed -e \"s/\(--[^=]*=\)\(.* .*\)/\1'\2'/\"`"
+
+    case "$option" in
+        -*=*) value=`echo "$option" | sed -e 's/[-_a-zA-Z0-9]*=//'` ;;
+           *) value="" ;;
+    esac
+
+    case "$option" in
+        --help)                          help=yes                   ;;
+
+        --prefix=*)                      LNX_PREFIX="$value"        ;;
+        --conf-path=*)                   LNX_CONF_PATH="$value"     ;;
+        --error-log-path=*)              LNX_ERROR_LOG_PATH="$value";;
+
+        *)
+            echo "$0: error: invalid option \"$option\""
+            exit 1
+        ;;
+    esac
+done
+
+LNX_CONFIGURE="$opt"
+
+if [ $help = yes ]; then
+cat << END
+
+  --help                             print this message
+
+  --prefix=PATH                      set installation prefix
+  --conf-path=PATH                   set lingx.conf pathname
+  --error-log-path=PATH              set error log pathname
+END
+
+    exit 1
+fi
+
+LNX_PREFIX=${LNX_PREFIX:-/usr/local/lingx}
+LNX_CONF_PATH=${LNX_CONF_PATH:-conf/lingx.conf}
+LNX_ERROR_LOG_PATH=${LNX_ERROR_LOG_PATH:-logs/error.log}
