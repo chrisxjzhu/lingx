@@ -3,4 +3,5 @@ add_library(lingx_core
             open_file.cc
             path.cc
             strings.cc
+            times.cc
 )
