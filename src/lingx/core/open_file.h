@@ -12,6 +12,9 @@ public:
         : fd_(fd), cldt_(cldt)
     { }
 
+    int fd() const noexcept
+    { return fd_; }
+
     void close() noexcept;
 
     ~OpenFile();
