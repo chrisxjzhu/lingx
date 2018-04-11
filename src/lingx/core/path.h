@@ -36,6 +36,8 @@ public:
     bool is_relative() const noexcept
     { return !is_absolute(); }
 
+    static void tail_separator(std::string& path);
+
 private:
     const std::string path_;
 };

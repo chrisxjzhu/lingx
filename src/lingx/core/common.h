@@ -7,6 +7,16 @@ namespace std { using experimental::string_view; }
 
 namespace lnx {
 
+enum rc_t {
+    LNX_OK       =  0,
+    LNX_ERROR    = -1,
+    LNX_AGAIN    = -2,
+    LNX_BUSY     = -3,
+    LNX_DONE     = -4,
+    LNX_DECLINED = -5,
+    LNX_ABORT    = -6
+};
+
 using uint = unsigned int;
 using ulong = unsigned long;
 

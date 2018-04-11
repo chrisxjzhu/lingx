@@ -1,11 +1,10 @@
 #include <lingx/core/log.h>
 #include <lingx/core/open_file.h>
-#include <lingx/core/path.h>
+#include <lingx/core/path.h>     // is_relative()
 #include <lingx/core/errno.h>    // Strerror()
 #include <lingx/core/times.h>    // Cached_err_log_time
 #include <lingx/core/strings.h>  // Slprintf()
 #include <lingx/config.h>        // LNX_ERROR_LOG_PATH
-#include <sstream>
 #include <cstdarg>
 #include <unistd.h>              // write()
 #include <fcntl.h>               // open()
@@ -34,12 +33,12 @@ Log::Log(const char* prefix)
         return;
     }
 
-    std::ostringstream oss;
-    if (Path(name).is_relative())
-        oss << prefix << '/';
-    oss << name;
-
-    const auto& path = oss.str();
+    std::string path;
+    if (Path(name).is_relative()) {
+        path = prefix;
+        Path::tail_separator(path);
+    }
+    path += name;
 
     int fd = ::open(path.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0644);
     if (fd == -1) {

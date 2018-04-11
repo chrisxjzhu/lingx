@@ -1,4 +1,5 @@
 add_library(lingx_core
+            cycle.cc
             errno.cc
             log.cc
             open_file.cc

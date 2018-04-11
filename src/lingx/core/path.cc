@@ -16,4 +16,10 @@ Path Path::parent_path() const
     return Path(path_.substr(0, pos + 1));
 }
 
+void Path::tail_separator(std::string& path)
+{
+    if (!path.empty() && path.back() != Separator)
+        path += Separator;
+}
+
 }
