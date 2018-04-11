@@ -33,6 +33,9 @@ private:
     std::string conf_param_;
 };
 
+struct CoreConf : ModuleConf {
+};
+
 extern Cycle* pCycle;
 
 extern bool Opt_test_config;

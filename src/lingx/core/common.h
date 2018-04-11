@@ -2,6 +2,8 @@
 #define _LINGX_CORE_COMMON_H
 
 #include <memory>
+#include <vector>
+#include <string>
 #include <experimental/string_view>
 namespace std { using experimental::string_view; }
 
@@ -22,6 +24,15 @@ using ulong = unsigned long;
 
 class Log;
 using LogPtr = std::shared_ptr<Log>;
+
+class Cycle;
+
+struct ModuleConf {};
+using  ModuleConfPtr = std::shared_ptr<ModuleConf>;
+
+/* temporarily put here */
+const char* const LNX_CONF_OK = nullptr;
+const char* const LNX_CONF_ERROR = (const char*) -1;
 
 }
 

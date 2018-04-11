@@ -2,6 +2,8 @@ add_library(lingx_core
             cycle.cc
             errno.cc
             log.cc
+            module.cc
+            modules.cc
             open_file.cc
             path.cc
             strings.cc

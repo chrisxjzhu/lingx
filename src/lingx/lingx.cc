@@ -1,10 +1,10 @@
 #include <lingx/lingx.h>
 #include <lingx/config.h>
-#include <lingx/core/common.h>
 #include <lingx/core/times.h>
 #include <lingx/core/files.h>
 #include <lingx/core/log.h>
 #include <lingx/core/cycle.h>
+#include <lingx/core/module.h>
 
 namespace lnx {
 namespace {
@@ -13,13 +13,34 @@ void Show_version_info_() noexcept;
 rc_t Get_options_(int argc, const char *const argv[]) noexcept;
 rc_t Process_options_(Cycle& cycle);
 
+ModuleConfPtr Core_module_create_conf_(const Cycle& cycle);
+const char* Core_module_init_conf_(const Cycle& cycle, const ModuleConfPtr& conf);
+
 bool Opt_show_help_ = false;
 bool Opt_show_version_ = false;
 const char* Opt_prefix_ = LNX_PREFIX;
 const char* Opt_conf_file_ = LNX_CONF_PATH;
 const char* Opt_conf_param_ = "";
 
+std::vector<Command> Core_commands_ {
+    Command { "daemon", MAIN_CONF }
+};
+
+CoreModuleCtx Core_module_ctx_ {
+    "core",
+    Core_module_create_conf_,
+    Core_module_init_conf_
+};
+
 }
+
+Module Core_module {
+    "lnx_core_module",
+    Core_module_ctx_,
+    Core_commands_,
+    CORE_MODULE
+};
+
 }
 
 int main(int argc, const char* const argv[])
@@ -49,6 +70,8 @@ int main(int argc, const char* const argv[])
 
     if (Process_options_(init_cycle) != LNX_OK)
         return 1;
+
+    Preinit_modules();
 
     return 0;
 }
@@ -154,6 +177,17 @@ rc_t Process_options_(Cycle& cycle)
         cycle.log()->set_level(Log::Level::INFO);
 
     return LNX_OK;
+}
+
+ModuleConfPtr Core_module_create_conf_(const Cycle& cycle)
+{
+    std::shared_ptr<CoreConf> ccf = std::make_shared<CoreConf>();
+    return ccf;
+}
+
+const char* Core_module_init_conf_(const Cycle& cycle, const ModuleConfPtr& conf)
+{
+    return LNX_CONF_OK;
 }
 
 }
