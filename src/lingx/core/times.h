@@ -13,6 +13,7 @@ struct Time {
 
 void Time_init();
 void Time_update();
+void Timezone_update() noexcept;
 
 extern Time* Cached_time;
 extern std::string_view Cached_err_log_time;

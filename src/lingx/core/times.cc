@@ -86,4 +86,17 @@ void Time_update()
     Cached_err_log_time = p1;
 }
 
+/*
+ * Linux does not test /etc/localtime change in localtime(),
+ * but may stat("/etc/localtime") several times in every strftime(),
+ * therefore we use it to update timezone.
+ */
+void Timezone_update() noexcept
+{
+    time_t t = ::time(0);
+    struct tm* tm = ::localtime(&t);
+    char buf[4];
+    ::strftime(buf, 4, "%H", tm);
+}
+
 }

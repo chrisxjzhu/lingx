@@ -4,6 +4,7 @@
 #include <lingx/core/errno.h>    // Strerror()
 #include <lingx/core/times.h>    // Cached_err_log_time
 #include <lingx/core/strings.h>  // Slprintf()
+#include <lingx/core/process_cycle.h>  // Pid
 #include <lingx/config.h>        // LNX_ERROR_LOG_PATH
 #include <cstdarg>
 #include <unistd.h>              // write()
@@ -60,7 +61,8 @@ void Log::log(Level lvl, int err, const char* fmt, ...) noexcept
 
     p = Slprintf(p, last, " [%s] ", &Err_levels_[lvl]);
 
-    /* TODO: log pid and tid here */
+    /* TODO: enable tid */
+    p = Slprintf(p, last, "%d#%d: ", Pid, 0);
 
     va_list args;
     va_start(args, fmt);

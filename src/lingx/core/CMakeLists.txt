@@ -6,6 +6,7 @@ add_library(lingx_core
             modules.cc
             open_file.cc
             path.cc
+            process_cycle.cc
             strings.cc
             times.cc
 )

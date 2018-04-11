@@ -27,8 +27,8 @@ using LogPtr = std::shared_ptr<Log>;
 
 class Cycle;
 
-struct ModuleConf {};
-using  ModuleConfPtr = std::shared_ptr<ModuleConf>;
+struct MConf {};
+using  MConfPtr = std::shared_ptr<MConf>;
 
 /* temporarily put here */
 const char* const LNX_CONF_OK = nullptr;
