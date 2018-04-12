@@ -6,7 +6,7 @@
 
 namespace lnx {
 
-Cycle* pCycle = nullptr;
+CyclePtr Cur_cycle = nullptr;
 
 bool Opt_test_config = false;
 
@@ -23,7 +23,7 @@ void Cycle::set_conf_file(const char* file)
     Path::tail_separator(conf_prefix_);
 }
 
-rc_t Init_new_cycle(const Cycle& ocycle, Cycle& cycle)
+CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 {
     Timezone_update();
 
@@ -32,17 +32,19 @@ rc_t Init_new_cycle(const Cycle& ocycle, Cycle& cycle)
 
     Time_update();
 
-    cycle.log_ = ocycle.log_;
-    cycle.prefix_ = ocycle.prefix_;
-    cycle.conf_prefix_ = ocycle.conf_prefix_;
-    cycle.conf_file_ = ocycle.conf_file_;
-    cycle.conf_param_ = ocycle.conf_param_;
+    CyclePtr cycle = std::make_shared<Cycle>();
 
-    cycle.conf_ctx_.resize(Max_modules_n);
+    cycle->log_ = old_cycle->log_;
+    cycle->prefix_ = old_cycle->prefix_;
+    cycle->conf_prefix_ = old_cycle->conf_prefix_;
+    cycle->conf_file_ = old_cycle->conf_file_;
+    cycle->conf_param_ = old_cycle->conf_param_;
 
-    cycle.modules_ = Modules;
+    cycle->conf_ctx_.resize(Max_modules_n);
 
-    for (Module& mod : cycle.modules_) {
+    cycle->modules_ = Modules;
+
+    for (Module& mod : cycle->modules_) {
         if (mod.type() != CORE_MODULE)
             continue;
 
@@ -50,32 +52,41 @@ rc_t Init_new_cycle(const Cycle& ocycle, Cycle& cycle)
 
         if (ctx.create_conf) {
             MConfPtr cf = ctx.create_conf(cycle);
-            cycle.conf_ctx_[mod.index()] = cf;
+            cycle->conf_ctx_[mod.index()] = cf;
         }
     }
 
-    for (Module& mod : cycle.modules_) {
+    for (Module& mod : cycle->modules_) {
         if (mod.type() != CORE_MODULE)
             continue;
 
         const CoreModuleCtx& ctx = static_cast<const CoreModuleCtx&>(mod.ctx());
 
         if (ctx.init_conf) {
-            if (ctx.init_conf(cycle, cycle.conf_ctx_[mod.index()])
+            if (ctx.init_conf(cycle, cycle->conf_ctx_[mod.index()])
                 == LNX_CONF_ERROR)
             {
-                return LNX_ERROR;
+                return nullptr;
             }
         }
     }
 
     if (Process_type == PROCESS_SIGNALLER)
-        return LNX_OK;
+        return cycle;
 
     std::shared_ptr<CoreConf> ccf = std::static_pointer_cast<CoreConf>
-                                    (cycle.conf_ctx_[Core_module.index()]);
+                                    (cycle->conf_ctx_[Core_module.index()]);
 
-    return LNX_OK;
+    if (Opt_test_config) {
+        /* TODO: create pidfile */
+    } else if (!old_cycle->is_init_cycle()) {
+        /*
+         * we do not create the pid file in the first ngx_init_cycle() call
+         * because we need to write the demonized process pid
+         */
+    }
+
+    return cycle;
 }
 
 }

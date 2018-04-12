@@ -13,10 +13,10 @@ namespace {
 
 void Show_version_info_() noexcept;
 rc_t Get_options_(int argc, const char *const argv[]) noexcept;
-rc_t Process_options_(Cycle& cycle);
+rc_t Process_options_(const CyclePtr& cycle);
 
-MConfPtr Core_module_create_conf_(const Cycle& cycle);
-const char* Core_module_init_conf_(const Cycle& cycle, const MConfPtr& conf);
+MConfPtr Core_module_create_conf_(const CyclePtr& cycle);
+const char* Core_module_init_conf_(const CyclePtr& cycle, const MConfPtr& conf);
 
 bool Opt_show_help_ = false;
 bool Opt_show_version_ = false;
@@ -66,18 +66,18 @@ int main(int argc, const char* const argv[])
 
     LogPtr log = std::make_shared<Log>(Opt_prefix_);
 
-    Cycle init_cycle;
-    pCycle = &init_cycle;
+    CyclePtr init_cycle = std::make_shared<Cycle>();
+    Cur_cycle = init_cycle;
 
-    init_cycle.set_log(log);
+    init_cycle->set_log(log);
 
     if (Process_options_(init_cycle) != LNX_OK)
         return 1;
 
     Preinit_modules();
 
-    Cycle cycle;
-    if (Init_new_cycle(init_cycle, cycle) != LNX_OK)
+    CyclePtr cycle = Init_new_cycle(init_cycle);
+    if (cycle == nullptr)
         return 1;
 
     return 0;
@@ -198,25 +198,25 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
     return LNX_OK;
 }
 
-rc_t Process_options_(Cycle& cycle)
+rc_t Process_options_(const CyclePtr& cycle)
 {
-    cycle.set_prefix(Opt_prefix_);
-    cycle.set_conf_file(Opt_conf_file_);
-    cycle.set_conf_param(Opt_conf_param_);
+    cycle->set_prefix(Opt_prefix_);
+    cycle->set_conf_file(Opt_conf_file_);
+    cycle->set_conf_param(Opt_conf_param_);
 
     if (Opt_test_config)
-        cycle.log()->set_level(Log::Level::INFO);
+        cycle->log()->set_level(Log::Level::INFO);
 
     return LNX_OK;
 }
 
-MConfPtr Core_module_create_conf_(const Cycle& cycle)
+MConfPtr Core_module_create_conf_(const CyclePtr& cycle)
 {
     std::shared_ptr<CoreConf> ccf = std::make_shared<CoreConf>();
     return ccf;
 }
 
-const char* Core_module_init_conf_(const Cycle& cycle, const MConfPtr& conf)
+const char* Core_module_init_conf_(const CyclePtr& cycle, const MConfPtr& conf)
 {
     return LNX_CONF_OK;
 }

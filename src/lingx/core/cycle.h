@@ -8,13 +8,16 @@ namespace lnx {
 class Module;
 
 class Cycle {
-    friend rc_t Init_new_cycle(const Cycle& ocycle, Cycle& cycle);
+    friend CyclePtr Init_new_cycle(const CyclePtr& old_cycle);
 
 public:
     Cycle(const Cycle&) = delete;
     Cycle& operator=(const Cycle&) = delete;
 
     Cycle() = default;
+
+    bool is_init_cycle() const noexcept
+    { return conf_ctx_.empty(); }
 
     const LogPtr& log() const noexcept
     { return log_; }
@@ -35,6 +38,8 @@ private:
 
     std::vector<std::reference_wrapper<Module>> modules_;
 
+    CyclePtr old_cycle_;
+
     std::string prefix_;
     std::string conf_prefix_;
     std::string conf_file_;
@@ -44,9 +49,9 @@ private:
 struct CoreConf : MConf {
 };
 
-rc_t Init_new_cycle(const Cycle& ocycle, Cycle& cycle);
+CyclePtr Init_new_cycle(const CyclePtr& old_cycle);
 
-extern Cycle* pCycle;
+extern CyclePtr Cur_cycle;
 
 extern Module Core_module;
 extern bool Opt_test_config;

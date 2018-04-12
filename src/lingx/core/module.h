@@ -52,8 +52,8 @@ private:
 };
 
 struct CoreModuleCtx : ModuleCtx {
-    typedef std::function<MConfPtr(const Cycle&)> create_conf_t;
-    typedef std::function<const char*(const Cycle&, const MConfPtr&)> init_conf_t;
+    typedef std::function<MConfPtr(const CyclePtr&)> create_conf_t;
+    typedef std::function<const char*(const CyclePtr&, const MConfPtr&)> init_conf_t;
 
     CoreModuleCtx(const char* name,
                   const create_conf_t& create_conf,
