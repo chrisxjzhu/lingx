@@ -3,6 +3,7 @@
 #include <lingx/core/times.h>
 #include <lingx/core/files.h>
 #include <lingx/core/log.h>
+#include <lingx/core/path.h>
 #include <lingx/core/cycle.h>
 #include <lingx/core/module.h>
 #include <lingx/core/process_cycle.h>
@@ -201,7 +202,7 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
 rc_t Process_options_(const CyclePtr& cycle)
 {
     cycle->set_prefix(Opt_prefix_);
-    cycle->set_conf_file(Opt_conf_file_);
+    cycle->set_conf_file(Path::Get_full_name(Opt_prefix_, Opt_conf_file_));
     cycle->set_conf_param(Opt_conf_param_);
 
     if (Opt_test_config)
@@ -213,11 +214,21 @@ rc_t Process_options_(const CyclePtr& cycle)
 MConfPtr Core_module_create_conf_(const CyclePtr& cycle)
 {
     std::shared_ptr<CoreConf> ccf = std::make_shared<CoreConf>();
+
+    ccf->daemon = true;
+
     return ccf;
 }
 
 const char* Core_module_init_conf_(const CyclePtr& cycle, const MConfPtr& conf)
 {
+    std::shared_ptr<CoreConf> ccf = std::static_pointer_cast<CoreConf>(conf);
+
+    if (ccf->pid_path.empty())
+        ccf->pid_path = LNX_PID_PATH;
+
+    ccf->pid_path = Path::Get_full_name(cycle->prefix(), ccf->pid_path);
+
     return LNX_CONF_OK;
 }
 

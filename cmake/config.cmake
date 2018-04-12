@@ -14,3 +14,7 @@ if(NOT LNX_ERROR_LOG_PATH)
 elseif("${LNX_ERROR_LOG_PATH}" STREQUAL "stderr")
   set(LNX_ERROR_LOG_PATH "")
 endif()
+
+if(NOT LNX_PID_PATH)
+  set(LNX_PID_PATH "logs/lingx.pid")
+endif()

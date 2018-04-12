@@ -37,7 +37,7 @@ Log::Log(const char* prefix)
     std::string path;
     if (Path(name).is_relative()) {
         path = prefix;
-        Path::tail_separator(path);
+        Path::Tail_separator(path);
     }
     path += name;
 

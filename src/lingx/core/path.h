@@ -36,7 +36,10 @@ public:
     bool is_relative() const noexcept
     { return !is_absolute(); }
 
-    static void tail_separator(std::string& path);
+    static void Tail_separator(std::string& path);
+
+    static std::string Get_full_name(const std::string& prefix,
+                                     const std::string& name);
 
 private:
     const std::string path_;

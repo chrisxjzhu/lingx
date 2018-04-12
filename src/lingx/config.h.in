@@ -21,4 +21,8 @@
 #define LNX_ERROR_LOG_PATH  "@LNX_ERROR_LOG_PATH@"
 #endif
 
+#ifndef LNX_PID_PATH
+#define LNX_PID_PATH  "@LNX_PID_PATH@"
+#endif
+
 #endif

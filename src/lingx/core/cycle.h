@@ -19,6 +19,9 @@ public:
     bool is_init_cycle() const noexcept
     { return conf_ctx_.empty(); }
 
+    std::string prefix() const noexcept
+    { return prefix_; }
+
     const LogPtr& log() const noexcept
     { return log_; }
 
@@ -26,7 +29,7 @@ public:
     { log_ = log; }
 
     void set_prefix(const char* prefix);
-    void set_conf_file(const char* file);
+    void set_conf_file(const std::string& file);
 
     void set_conf_param(const char* param)
     { conf_param_ = param; }
@@ -47,6 +50,8 @@ private:
 };
 
 struct CoreConf : MConf {
+    bool daemon;
+    std::string pid_path;
 };
 
 CyclePtr Init_new_cycle(const CyclePtr& old_cycle);
