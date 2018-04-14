@@ -6,6 +6,8 @@
 #include <string>
 #include <experimental/string_view>
 namespace std { using experimental::string_view; }
+#include <cstring>
+#include <sys/types.h>
 
 namespace lnx {
 
@@ -19,8 +21,8 @@ enum rc_t {
     LNX_ABORT    = -6
 };
 
-using uint = unsigned int;
-using ulong = unsigned long;
+constexpr size_t MAX_INT_LEN   = sizeof("-2147483648") - 1;
+constexpr size_t MAX_LONG_LEN  = sizeof("-9223372036854775808") - 1;
 
 class Log;
 using LogPtr = std::shared_ptr<Log>;

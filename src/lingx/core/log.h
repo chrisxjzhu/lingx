@@ -34,22 +34,19 @@ public:
 
     void log(Level lvl, int err, const char* fmt, ...) noexcept;
 
-    static const size_t MAX_ERROR_STR = 1024;
-
     static void Printf(int err, const char* fmt, ...) noexcept;
 
 private:
-    static char* Strerrno_(char* buf, const char* last, int err) noexcept;
-
     Level level_ = Level::NOTICE;
     std::shared_ptr<OpenFile> file_;
 };
 
 }
 
-#define lnx_Log_error(plog, lvl, err, ...)                                   \
+#define Log_error(plog, lvl, err, ...)                                       \
     do {                                                                     \
-        if ((plog)->level() >= lvl) (plog)->log(lvl, err, __VA_ARGS__);      \
+        if ((plog) && (plog)->level() >= lvl)                                \
+            (plog)->log(lvl, err, __VA_ARGS__);                              \
     } while (0)
 
 #endif

@@ -11,8 +11,9 @@ struct Time {
     int  gmtoff;
 };
 
-void Time_init();
-void Time_update();
+void Time_init() noexcept;
+void Time_update() noexcept;
+void Time_sigsafe_update() noexcept;
 void Timezone_update() noexcept;
 
 extern Time* Cached_time;

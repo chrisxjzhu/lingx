@@ -28,14 +28,14 @@ Time* Cached_time = nullptr;
 
 std::string_view Cached_err_log_time;
 
-void Time_init()
+void Time_init() noexcept
 {
     Cached_time = &Cached_time_[0];
 
     Time_update();
 }
 
-void Time_update()
+void Time_update() noexcept
 {
     if (!Mutex_.try_lock())
         return;
@@ -83,6 +83,42 @@ void Time_update()
                      tm.tm_hour, tm.tm_min, tm.tm_sec);
 
     Cached_time = tp;
+    Cached_err_log_time = p1;
+}
+
+void Time_sigsafe_update() noexcept
+{
+    if (!Mutex_.try_lock())
+        return;
+
+    std::lock_guard<std::mutex> lock(Mutex_, std::adopt_lock);
+
+    struct timeval tv;
+    ::gettimeofday(&tv, nullptr);
+
+    long sec = tv.tv_sec;
+
+    Time* tp = &Cached_time_[Slot_];
+
+    if (tp->sec == sec)
+        return;
+
+    Slot_ = (Slot_ + 1) % TIME_SLOTS_;
+
+    tp = &Cached_time_[Slot_];
+
+    tp->sec = 0;
+
+    struct tm tm;
+    long tmp = sec + Cached_gmtoff_ * 60;
+    ::gmtime_r(&tmp, &tm);
+
+    char* p1 = &Cached_err_log_time_[Slot_][0];
+
+    std::sprintf(p1, "%4d/%02d/%02d %02d:%02d:%02d",
+                     tm.tm_year, tm.tm_mon, tm.tm_mday,
+                     tm.tm_hour, tm.tm_min, tm.tm_sec);
+
     Cached_err_log_time = p1;
 }
 

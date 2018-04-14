@@ -1,4 +1,4 @@
-#include <lingx/core/errno.h>
+#include <lingx/core/error.h>
 #include <cstring>  // strlen()
 #include <cassert>
 
@@ -20,11 +20,24 @@ void Strerror_test()
     assert(p == estr + 4);
 }
 
+void Throw_error_test()
+{
+    const char* path = "/non-exist";
+
+    try {
+        throw lnx::Error(2, "open() \"%s\" failed", path);
+    } catch (const lnx::Error& error) {
+        assert(std::strcmp(error.what(),
+        "open() \"/non-exist\" failed (2: No such file or directory)") == 0);
+    }
+}
+
 }
 
 int main()
 {
     Strerror_test();
+    Throw_error_test();
 
     return 0;
 }

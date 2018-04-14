@@ -15,7 +15,7 @@ public:
     int fd() const noexcept
     { return fd_; }
 
-    void close() noexcept;
+    int close() noexcept;
 
     ~OpenFile();
 

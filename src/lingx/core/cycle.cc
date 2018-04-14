@@ -1,8 +1,13 @@
 #include <lingx/core/cycle.h>
 #include <lingx/core/times.h>
 #include <lingx/core/path.h>
+#include <lingx/core/file.h>
 #include <lingx/core/module.h>
+#include <lingx/core/process.h>  // Os_signal_process()
 #include <lingx/core/process_cycle.h>
+#include <lingx/core/log.h>
+#include <lingx/core/error.h>
+#include <lingx/core/strings.h>  // Atoi()
 
 namespace lnx {
 
@@ -87,6 +92,43 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     }
 
     return cycle;
+}
+
+int Signal_process(const CyclePtr& cycle, const char* sig) noexcept
+{
+    Log_error(cycle->log(), Log::NOTICE, 0, "signal process started");
+
+    std::shared_ptr<CoreConf> ccf = std::static_pointer_cast<CoreConf>
+                                    (cycle->conf_ctx()[Core_module.index()]);
+
+    char buf[MAX_INT_LEN + 2];
+    ssize_t n = 0;
+
+    /* TODO: handle File ops and logging consistently */
+    try {
+        File file(ccf->pid_path.c_str(), O_RDONLY);
+        file.set_log(cycle->log());
+        n = file.read(buf, sizeof(buf), 0);
+    } catch (const Error& err) {
+        Log_error(cycle->log(), Log::ERROR, 0, err.what());
+        return 1;
+    }
+
+    if (n <= 0)
+        return 1;
+
+    while (n > 0 && (buf[n-1] == '\r' || buf[n-1] == '\n'))
+        --n;
+
+    pid_t pid = Atoi(buf, n);
+    if (pid == -1) {
+        Log_error(cycle->log(), Log::ERROR, 0,
+                  "invalid PID number \"%.*s\" in \"%s\"",
+                  n, buf, ccf->pid_path.c_str());
+        return 1;
+    }
+
+    return Os_signal_process(cycle, sig, pid);
 }
 
 }

@@ -81,6 +81,9 @@ int main(int argc, const char* const argv[])
     if (cycle == nullptr)
         return 1;
 
+    if (Opt_signal_[0])
+        return Signal_process(cycle, Opt_signal_);
+
     return 0;
 }
 

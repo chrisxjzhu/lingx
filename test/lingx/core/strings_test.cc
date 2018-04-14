@@ -48,12 +48,25 @@ void Slprintf_test()
     assert(str[0] == 'a');
 }
 
+void Atoi_test()
+{
+    assert(lnx::Atoi("12345", 5) == 12345);
+    assert(lnx::Atoi("12345", 6) == -1);
+
+    assert(lnx::Atoi("12d", 2) == 12);
+    assert(lnx::Atoi("12d", 3) == -1);
+
+    assert(lnx::Atoi("012", 3) == 12);
+    assert(lnx::Atoi("-12", 3) == -1);
+}
+
 }
 
 int main()
 {
     Strncpy_test();
     Slprintf_test();
+    Atoi_test();
 
     return 0;
 }

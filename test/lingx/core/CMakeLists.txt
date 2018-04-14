@@ -4,7 +4,7 @@ macro(_add_core_test name)
 endmacro()
 
 _add_core_test(strings_test)
-_add_core_test(errno_test)
+_add_core_test(error_test)
 _add_core_test(open_file_test)
 _add_core_test(path_test)
 _add_core_test(times_test)

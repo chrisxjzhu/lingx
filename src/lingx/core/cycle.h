@@ -19,11 +19,14 @@ public:
     bool is_init_cycle() const noexcept
     { return conf_ctx_.empty(); }
 
-    std::string prefix() const noexcept
-    { return prefix_; }
+    const std::vector<MConfPtr>& conf_ctx() const noexcept
+    { return conf_ctx_; }
 
     const LogPtr& log() const noexcept
     { return log_; }
+
+    std::string prefix() const noexcept
+    { return prefix_; }
 
     void set_log(const LogPtr& log) noexcept
     { log_ = log; }
@@ -55,6 +58,8 @@ struct CoreConf : MConf {
 };
 
 CyclePtr Init_new_cycle(const CyclePtr& old_cycle);
+
+int Signal_process(const CyclePtr& cycle, const char* sig) noexcept;
 
 extern CyclePtr Cur_cycle;
 

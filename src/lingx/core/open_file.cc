@@ -3,13 +3,17 @@
 
 namespace lnx {
 
-void OpenFile::close() noexcept
+int OpenFile::close() noexcept
 {
+    int rc = 0;
     if (fd_ != -1) {
-        ::close(fd_);
-        fd_   = -1;
-        cldt_ = false;
+        rc = ::close(fd_);
+        if (rc == 0) {
+            fd_ = -1;
+            cldt_ = false;
+        }
     }
+    return rc;
 }
 
 OpenFile::~OpenFile()
