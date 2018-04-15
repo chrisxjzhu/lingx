@@ -6,7 +6,9 @@
 #include <lingx/core/path.h>
 #include <lingx/core/cycle.h>
 #include <lingx/core/module.h>
+#include <lingx/core/process.h>  // Init_signals()
 #include <lingx/core/process_cycle.h>
+#include <lingx/core/daemon.h>   // Daemonize()
 #include <unistd.h>  // getpid()
 
 namespace lnx {
@@ -83,6 +85,26 @@ int main(int argc, const char* const argv[])
 
     if (Opt_signal_[0])
         return Signal_process(cycle, Opt_signal_);
+
+    Cur_cycle = cycle;
+
+    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
+
+    if (ccf->master && Process_type == PROCESS_SINGLE)
+        Process_type = PROCESS_MASTER;
+
+    if (Init_signals(cycle->log()) != LNX_OK)
+        return 1;
+
+    if (ccf->daemon) {
+        if (Daemonize(cycle->log()) != LNX_OK)
+            return 1;
+
+        Daemonized = true;
+    }
+
+    if (Create_pidfile(ccf->pid_path, cycle->log()) != LNX_OK)
+        return 1;
 
     return 0;
 }
@@ -218,7 +240,8 @@ MConfPtr Core_module_create_conf_(const CyclePtr& cycle)
 {
     std::shared_ptr<CoreConf> ccf = std::make_shared<CoreConf>();
 
-    ccf->daemon = true;
+    ccf->daemon = false;
+    ccf->master = false;
 
     return ccf;
 }

@@ -8,6 +8,7 @@
 #include <lingx/core/log.h>
 #include <lingx/core/error.h>
 #include <lingx/core/strings.h>  // Atoi()
+#include <unistd.h>  // unlink()
 
 namespace lnx {
 
@@ -79,8 +80,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     if (Process_type == PROCESS_SIGNALLER)
         return cycle;
 
-    std::shared_ptr<CoreConf> ccf = std::static_pointer_cast<CoreConf>
-                                    (cycle->conf_ctx_[Core_module.index()]);
+    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
 
     if (Opt_test_config) {
         /* TODO: create pidfile */
@@ -98,24 +98,27 @@ int Signal_process(const CyclePtr& cycle, const char* sig) noexcept
 {
     Log_error(cycle->log(), Log::NOTICE, 0, "signal process started");
 
-    std::shared_ptr<CoreConf> ccf = std::static_pointer_cast<CoreConf>
-                                    (cycle->conf_ctx()[Core_module.index()]);
+    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
 
-    char buf[MAX_INT_LEN + 2];
-    ssize_t n = 0;
+    File file;
 
-    /* TODO: handle File ops and logging consistently */
-    try {
-        File file(ccf->pid_path.c_str(), O_RDONLY);
-        file.set_log(cycle->log());
-        n = file.read(buf, sizeof(buf), 0);
-    } catch (const Error& err) {
-        Log_error(cycle->log(), Log::ERROR, 0, err.what());
+    if (file.open(ccf->pid_path.c_str(), O_RDONLY) == -1) {
+        /* custom log level */
+        Log_error(cycle->log(), Log::ERROR, errno,
+                  "open() \"%s\" failed", ccf->pid_path.c_str());
         return 1;
     }
 
+    file.set_log(cycle->log());
+
+    char buf[MAX_INT_LEN + 2];
+
+    ssize_t n = file.read(buf, sizeof(buf), 0);
     if (n <= 0)
         return 1;
+
+    /* close it early */
+    file.close();
 
     while (n > 0 && (buf[n-1] == '\r' || buf[n-1] == '\n'))
         --n;
@@ -129,6 +132,44 @@ int Signal_process(const CyclePtr& cycle, const char* sig) noexcept
     }
 
     return Os_signal_process(cycle, sig, pid);
+}
+
+rc_t Create_pidfile(const std::string& path, const LogPtr& log) noexcept
+{
+    if (Process_type > PROCESS_MASTER)
+        return LNX_OK;
+
+    File file(log);
+
+    int flags = O_RDWR | O_CREAT;
+    if (!Opt_test_config)
+        flags |= O_TRUNC;
+
+    if (file.open(path.c_str(), flags) == -1)
+        return LNX_ERROR;
+
+    if (!Opt_test_config) {
+        char pid[MAX_INT_LEN + 2];
+        int len = std::snprintf(pid, sizeof(pid), "%d\n", Pid);
+
+        if (len <= 0 || (size_t) len >= sizeof(pid))
+            return LNX_ERROR;
+
+        if (file.write(pid, len, 0) == -1)
+            return LNX_ERROR;
+    }
+
+    return LNX_OK;
+}
+
+void Delete_pidfile(const CyclePtr& cycle) noexcept
+{
+    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
+    const char* path = ccf->pid_path.c_str();
+
+    if (::unlink(path) == -1)
+        Log_error(cycle->log(), Log::ALERT, errno,
+                  "unlink() \"%s\" failed", path);
 }
 
 }

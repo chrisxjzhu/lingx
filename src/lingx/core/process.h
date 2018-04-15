@@ -2,9 +2,10 @@
 #define _LINGX_CORE_PROCESS_H
 
 #include <lingx/core/common.h>
-#include <sys/types.h>
 
 namespace lnx {
+
+rc_t Init_signals(const LogPtr& log) noexcept;
 
 int Os_signal_process(const CyclePtr& cycle, const char* name, pid_t pid) noexcept;
 

@@ -1,5 +1,6 @@
 add_library(lingx_core
             cycle.cc
+            daemon.cc
             error.cc
             file.cc
             log.cc

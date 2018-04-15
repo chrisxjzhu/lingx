@@ -37,6 +37,10 @@ using  MConfPtr = std::shared_ptr<MConf>;
 const char* const LNX_CONF_OK = nullptr;
 const char* const LNX_CONF_ERROR = (const char*) -1;
 
+/* temporarily put here */
+#define Get_module_conf(type, cycle, module)                                 \
+    std::static_pointer_cast<type>((cycle)->conf_ctx()[(module).index()])
+
 }
 
 #endif

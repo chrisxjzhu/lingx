@@ -54,12 +54,16 @@ private:
 
 struct CoreConf : MConf {
     bool daemon;
+    bool master;
     std::string pid_path;
 };
 
 CyclePtr Init_new_cycle(const CyclePtr& old_cycle);
 
 int Signal_process(const CyclePtr& cycle, const char* sig) noexcept;
+
+rc_t Create_pidfile(const std::string& path, const LogPtr& log) noexcept;
+void Delete_pidfile(const CyclePtr& cycle) noexcept;
 
 extern CyclePtr Cur_cycle;
 

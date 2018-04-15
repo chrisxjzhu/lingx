@@ -2,7 +2,8 @@
 
 namespace lnx {
 
-ProcessType  Process_type;
-pid_t        Pid;
+ProcessType  Process_type = PROCESS_SINGLE;
+pid_t        Pid = -1;
+bool         Daemonized = false;
 
 }

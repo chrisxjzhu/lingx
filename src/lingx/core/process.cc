@@ -40,6 +40,23 @@ void Signal_handler_(int signo) noexcept
 
 }
 
+rc_t Init_signals(const LogPtr& log) noexcept
+{
+    for (Signal_* sig = Signals_; sig->signo != 0; ++sig) {
+        struct sigaction sa;
+        std::memset(&sa, 0, sizeof sa);
+        sa.sa_handler = sig->handler;
+        ::sigemptyset(&sa.sa_mask);
+        if (::sigaction(sig->signo, &sa, nullptr) == -1) {
+            Log_error(log, Log::EMERG, errno,
+                      "sigaction(%s) failed", sig->signame);
+            return LNX_ERROR;
+        }
+    }
+
+    return LNX_OK;
+}
+
 int Os_signal_process(const CyclePtr& cycle, const char* name, pid_t pid) noexcept
 {
     for (Signal_* sig = Signals_; sig->signo != 0; ++sig)
