@@ -50,6 +50,8 @@ rc_t Daemonize(const LogPtr& log) noexcept
     }
 
 #if 0
+    /* Reserve the STDERR_FILENO to avoid it being used for other files */
+
     if (::dup2(fd, STDERR_FILENO) == -1) {
         Log_error(log, Log::EMERG, errno, "dup2(STDERR) failed");
         return LNX_ERROR;

@@ -2,6 +2,7 @@
 #include <lingx/core/error.h>
 #include <lingx/core/log.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 namespace lnx {
 

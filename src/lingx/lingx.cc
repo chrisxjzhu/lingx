@@ -21,12 +21,13 @@ rc_t Process_options_(const CyclePtr& cycle);
 MConfPtr Core_module_create_conf_(const CyclePtr& cycle);
 const char* Core_module_init_conf_(const CyclePtr& cycle, const MConfPtr& conf);
 
-bool Opt_show_help_ = false;
-bool Opt_show_version_ = false;
-const char* Opt_prefix_ = LNX_PREFIX;
-const char* Opt_conf_file_ = LNX_CONF_PATH;
+bool Opt_show_help_      = false;
+bool Opt_show_version_   = false;
+bool Opt_show_configure_ = false;
+const char* Opt_prefix_     = LNX_PREFIX;
+const char* Opt_conf_file_  = LNX_CONF_PATH;
 const char* Opt_conf_param_ = "";
-const char* Opt_signal_ = "";
+const char* Opt_signal_     = "";
 
 std::vector<Command> Core_commands_ {
     Command { "daemon", MAIN_CONF }
@@ -67,7 +68,7 @@ int main(int argc, const char* const argv[])
 
     Pid = ::getpid();
 
-    LogPtr log = std::make_shared<Log>(Opt_prefix_);
+    LogPtr log = Init_new_log(Opt_prefix_);
 
     CyclePtr init_cycle = std::make_shared<Cycle>();
     Cur_cycle = init_cycle;
@@ -82,6 +83,15 @@ int main(int argc, const char* const argv[])
     CyclePtr cycle = Init_new_cycle(init_cycle);
     if (cycle == nullptr)
         return 1;
+
+    if (Opt_test_config) {
+        if (!Opt_quiet_mode) {
+            Log::Printf(0, "configuration file %s test is successful",
+                        cycle->conf_file().c_str());
+        }
+
+        return 0;
+    }
 
     if (Opt_signal_[0])
         return Signal_process(cycle, Opt_signal_);
@@ -106,6 +116,23 @@ int main(int argc, const char* const argv[])
     if (Create_pidfile(ccf->pid_path, cycle->log()) != LNX_OK)
         return 1;
 
+    if (cycle->log_redirect_stderr() != LNX_OK)
+        return 1;
+
+    if (log->file()->fd() != STDERR_FILENO) {
+        if (log->file()->close() == -1) {
+            Log_error(cycle->log(), Log::ALERT, errno,
+                      "close() built-in log failed");
+        }
+    }
+
+    Use_stderr = false;
+
+    if (Process_type == PROCESS_SINGLE)
+        Single_process_cycle(cycle);
+    else
+        Master_process_cycle(cycle);
+
     return 0;
 }
 
@@ -118,13 +145,16 @@ void Show_version_info_() noexcept
 
     if (Opt_show_help_) {
         Write_stderr(
-            "Usage: lingx [-?hvt] [-s signal] [-c filename] "
+            "Usage: lingx [-?hvVtq] [-s signal] [-c filename] "
                          "[-p prefix]\n"
                          "\n"
             "Options:\n"
             "  -?,-h         : this help\n"
             "  -v            : show version and exit\n"
+            "  -V            : show version and configure options then exit\n"
             "  -t            : test configuration and exit\n"
+            "  -q            : suppress non-error messages "
+                               "during configuration testing\n"
             "  -s signal     : send signal to a master process: "
                                "stop, quit, reopen, reload\n"
             "  -p prefix     : set prefix path (default: " LNX_PREFIX ")\n"
@@ -132,6 +162,11 @@ void Show_version_info_() noexcept
                                ")\n"
             "\n"
         );
+    }
+
+    if (Opt_show_configure_) {
+        Write_stderr("built by " LNX_COMPILER "\n");
+        Write_stderr("configure arguments:" LNX_CONFIGURE "\n");
     }
 }
 
@@ -157,8 +192,17 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
                 Opt_show_version_ = true;
                 break;
 
+            case 'V':
+                Opt_show_version_ = true;
+                Opt_show_configure_ = true;
+                break;
+
             case 't':
                 Opt_test_config = true;
+                break;
+
+            case 'q':
+                Opt_quiet_mode = true;
                 break;
 
             case 'p':

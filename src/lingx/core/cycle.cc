@@ -8,13 +8,16 @@
 #include <lingx/core/log.h>
 #include <lingx/core/error.h>
 #include <lingx/core/strings.h>  // Atoi()
+#include <lingx/config.h>  // LNX_ERROR_LOG_PATH
 #include <unistd.h>  // unlink()
+#include <fcntl.h>   // open()
 
 namespace lnx {
 
 CyclePtr Cur_cycle = nullptr;
 
 bool Opt_test_config = false;
+bool Opt_quiet_mode  = false;
 
 void Cycle::set_prefix(const char* prefix)
 {
@@ -29,6 +32,76 @@ void Cycle::set_conf_file(const std::string& file)
     Path::Tail_separator(conf_prefix_);
 }
 
+OpenFilePtr Cycle::log_open_file(const std::string& name)
+{
+    int fd = STDERR_FILENO;
+    std::string fname;
+
+    if (!name.empty()) {
+        fname = Path::Get_full_name(prefix_, name);
+
+        for (const auto& f : open_files_)
+            if (f->name() == fname)
+                return f;
+
+        fd = ::open(fname.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC, 0644);
+        if (fd == -1) {
+            Log_error(log_, Log::EMERG, errno,
+                      "open() \"%s\" failed", fname.c_str());
+            return nullptr;
+        }
+    }
+
+    for (const auto& f : open_files_)
+        if (f->fd() == fd)
+            return f;
+
+    OpenFilePtr file = std::make_shared<OpenFile>(fd, fname);
+    open_files_.push_back(file);
+
+    return file;
+}
+
+rc_t Cycle::log_redirect_stderr() noexcept
+{
+    /*
+     * if (log_use_stderr_)
+     *    return LNX_OK;
+     */
+
+    int fd = log_->file()->fd();
+    if (fd != STDERR_FILENO) {
+        if (::dup2(fd, STDERR_FILENO) == -1) {
+            Log_error(log_, Log::ALERT, errno, "dup2(, STDERR_FILENO) failed");
+            return LNX_ERROR;
+        }
+    }
+
+    return LNX_OK;
+}
+
+rc_t Cycle::log_open_default_()
+{
+    if (Get_file_log(new_log_))
+        return LNX_OK;
+
+    LogPtr log = std::make_shared<Log>();
+
+    if (!new_log_)
+        new_log_ = log;
+
+    log->set_level(Log::ERROR);
+
+    log->set_file(log_open_file(LNX_ERROR_LOG_PATH));
+    if (!log->file())
+        return LNX_ERROR;
+
+    if (log != new_log_)
+        Log_insert(new_log_, log);
+
+    return LNX_OK;
+}
+
 CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 {
     Timezone_update();
@@ -38,9 +111,13 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 
     Time_update();
 
+    LogPtr log = old_cycle->log_;
+
     CyclePtr cycle = std::make_shared<Cycle>();
 
-    cycle->log_ = old_cycle->log_;
+    cycle->log_ = log;
+    cycle->old_cycle_ = old_cycle;
+
     cycle->prefix_ = old_cycle->prefix_;
     cycle->conf_prefix_ = old_cycle->conf_prefix_;
     cycle->conf_file_ = old_cycle->conf_file_;
@@ -60,6 +137,11 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
             MConfPtr cf = ctx.create_conf(cycle);
             cycle->conf_ctx_[mod.index()] = cf;
         }
+    }
+
+    if (Opt_test_config && !Opt_quiet_mode) {
+        Log::Printf(0, "the configuration file %s syntax is ok",
+                    cycle->conf_file_.c_str());
     }
 
     for (Module& mod : cycle->modules_) {
@@ -83,12 +165,41 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
 
     if (Opt_test_config) {
-        /* TODO: create pidfile */
+        if (Create_pidfile(ccf->pid_path, log) != LNX_OK)
+            return nullptr;
     } else if (!old_cycle->is_init_cycle()) {
         /*
-         * we do not create the pid file in the first ngx_init_cycle() call
+         * we do not create the pid file in the first Init_new_cycle() call
          * because we need to write the demonized process pid
          */
+        auto old_ccf = Get_module_conf(CoreConf, old_cycle, Core_module);
+
+        if (ccf->pid_path != old_ccf->pid_path) {
+            /* new pid file name */
+
+            if (Create_pidfile(ccf->pid_path, log) != LNX_OK)
+                return nullptr;
+
+            Delete_pidfile(old_cycle);
+        }
+    }
+
+    if (cycle->log_open_default_() != LNX_OK)
+        return nullptr;
+
+    cycle->log_ = cycle->new_log_;
+
+    /* commit the new cycle configuration */
+
+    if (!Use_stderr)
+        cycle->log_redirect_stderr();
+
+    /* close old open files */
+    old_cycle->open_files_.clear();
+
+    if (Process_type == PROCESS_MASTER || old_cycle->is_init_cycle()) {
+        cycle->old_cycle_ = nullptr;
+        return cycle;
     }
 
     return cycle;

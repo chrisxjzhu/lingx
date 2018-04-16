@@ -2,6 +2,8 @@
 #define _LINGX_CORE_CYCLE_H
 
 #include <lingx/core/common.h>
+#include <lingx/core/open_file.h>
+#include <list>
 
 namespace lnx {
 
@@ -25,8 +27,11 @@ public:
     const LogPtr& log() const noexcept
     { return log_; }
 
-    std::string prefix() const noexcept
+    const std::string& prefix() const noexcept
     { return prefix_; }
+
+    const std::string& conf_file() const noexcept
+    { return conf_file_; }
 
     void set_log(const LogPtr& log) noexcept
     { log_ = log; }
@@ -37,12 +42,21 @@ public:
     void set_conf_param(const char* param)
     { conf_param_ = param; }
 
+    OpenFilePtr log_open_file(const std::string& name);
+
+    rc_t log_redirect_stderr() noexcept;
+
 private:
+    rc_t log_open_default_();
+
     std::vector<MConfPtr> conf_ctx_;
 
+    LogPtr new_log_;
     LogPtr log_;
 
     std::vector<std::reference_wrapper<Module>> modules_;
+
+    std::list<OpenFilePtr> open_files_;
 
     CyclePtr old_cycle_;
 
@@ -69,6 +83,7 @@ extern CyclePtr Cur_cycle;
 
 extern Module Core_module;
 extern bool Opt_test_config;
+extern bool Opt_quiet_mode;
 
 }
 

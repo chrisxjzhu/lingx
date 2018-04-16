@@ -33,6 +33,9 @@ using CyclePtr = std::shared_ptr<Cycle>;
 struct MConf {};
 using  MConfPtr = std::shared_ptr<MConf>;
 
+class OpenFile;
+using OpenFilePtr = std::shared_ptr<OpenFile>;
+
 /* temporarily put here */
 const char* const LNX_CONF_OK = nullptr;
 const char* const LNX_CONF_ERROR = (const char*) -1;

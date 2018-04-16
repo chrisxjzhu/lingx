@@ -1,13 +1,14 @@
 #ifndef _LINGX_CORE_LOG_H
 #define _LINGX_CORE_LOG_H
 
-#include <memory>
+#include <lingx/core/common.h>
 
 namespace lnx {
 
-class OpenFile;
-
 class Log {
+    friend LogPtr Init_new_log(const char* prefix);
+    friend void Log_insert(LogPtr log, const LogPtr& new_log) noexcept;
+
 public:
     enum Level {
         STDERR = 0,
@@ -24,22 +25,44 @@ public:
     Log(const Log&) = delete;
     Log& operator=(const Log&) = delete;
 
-    explicit Log(const char* prefix);
+    Log() = default;
+
+    Log(Log&&) = default;
+    Log& operator=(Log&&) = default;
 
     Level level() const noexcept
     { return level_; }
 
+    const OpenFilePtr& file() const noexcept
+    { return file_; }
+
+    const LogPtr& next() const noexcept
+    { return next_; }
+
     void set_level(Level lvl) noexcept
     { level_ = lvl; }
+
+    void set_file(const OpenFilePtr& file) noexcept
+    { file_ = file; }
 
     void log(Level lvl, int err, const char* fmt, ...) noexcept;
 
     static void Printf(int err, const char* fmt, ...) noexcept;
 
 private:
-    Level level_ = Level::NOTICE;
-    std::shared_ptr<OpenFile> file_;
+    Level level_ = STDERR;
+    OpenFilePtr file_;
+
+    LogPtr next_;
 };
+
+LogPtr Init_new_log(const char* prefix);
+
+LogPtr Get_file_log(const LogPtr& head) noexcept;
+
+void Log_insert(LogPtr log, const LogPtr& new_log) noexcept;
+
+extern bool Use_stderr;
 
 }
 

@@ -13,13 +13,7 @@ void OpenFile_test()
     assert(::fcntl(fd, F_GETFD) != -1);
 
     {
-        lnx::OpenFile f(fd, false);
-    }
-
-    assert(::fcntl(fd, F_GETFD) != -1);
-
-    {
-        lnx::OpenFile f(fd);
+        lnx::OpenFile f(fd, path);
     }
 
     assert(::fcntl(fd, F_GETFD) == -1);

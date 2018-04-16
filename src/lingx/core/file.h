@@ -2,7 +2,6 @@
 #define _LINGX_CORE_FILE_H
 
 #include <lingx/core/common.h>
-#include <fcntl.h>
 
 namespace lnx {
 
