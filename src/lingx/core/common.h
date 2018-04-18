@@ -12,13 +12,13 @@ namespace std { using experimental::string_view; }
 namespace lnx {
 
 enum rc_t {
-    LNX_OK       =  0,
-    LNX_ERROR    = -1,
-    LNX_AGAIN    = -2,
-    LNX_BUSY     = -3,
-    LNX_DONE     = -4,
-    LNX_DECLINED = -5,
-    LNX_ABORT    = -6
+    OK       =  0,
+    ERROR    = -1,
+    AGAIN    = -2,
+    BUSY     = -3,
+    DONE     = -4,
+    DECLINED = -5,
+    ABORT    = -6
 };
 
 constexpr size_t MAX_INT_LEN   = sizeof("-2147483648") - 1;
@@ -35,14 +35,6 @@ using  MConfPtr = std::shared_ptr<MConf>;
 
 class OpenFile;
 using OpenFilePtr = std::shared_ptr<OpenFile>;
-
-/* temporarily put here */
-const char* const LNX_CONF_OK = nullptr;
-const char* const LNX_CONF_ERROR = (const char*) -1;
-
-/* temporarily put here */
-#define Get_module_conf(type, cycle, module)                                 \
-    std::static_pointer_cast<type>((cycle)->conf_ctx()[(module).index()])
 
 }
 

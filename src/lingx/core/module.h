@@ -5,14 +5,7 @@
 
 namespace lnx {
 
-enum CommandType {
-    MAIN_CONF = 0x01000000
-};
-
-struct Command {
-    std::string_view name;
-    int type = 0;
-};
+struct Command;
 
 struct ModuleCtx {};
 
@@ -39,6 +32,9 @@ public:
 
     const ModuleCtx& ctx() const noexcept
     { return ctx_; }
+
+    const std::vector<Command>& commands() const noexcept
+    { return commands_; }
 
     ModuleType type() const noexcept
     { return type_; }
@@ -72,5 +68,8 @@ extern size_t Max_modules_n;
 void Preinit_modules();
 
 }
+
+#define Get_module_conf(type, cycle, module)                                 \
+    std::static_pointer_cast<type>((cycle)->conf_ctx()[(module).index()])
 
 #endif

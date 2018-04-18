@@ -50,11 +50,11 @@ rc_t Init_signals(const LogPtr& log) noexcept
         if (::sigaction(sig->signo, &sa, nullptr) == -1) {
             Log_error(log, Log::EMERG, errno,
                       "sigaction(%s) failed", sig->signame);
-            return LNX_ERROR;
+            return ERROR;
         }
     }
 
-    return LNX_OK;
+    return OK;
 }
 
 int Os_signal_process(const CyclePtr& cycle, const char* name, pid_t pid) noexcept

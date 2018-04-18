@@ -1,4 +1,5 @@
 add_library(lingx_core
+            conf_file.cc
             cycle.cc
             daemon.cc
             error.cc

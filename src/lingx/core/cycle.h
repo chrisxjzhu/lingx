@@ -24,6 +24,9 @@ public:
     const std::vector<MConfPtr>& conf_ctx() const noexcept
     { return conf_ctx_; }
 
+    const std::vector<std::reference_wrapper<Module>>& modules() const noexcept
+    { return modules_; }
+
     const LogPtr& log() const noexcept
     { return log_; }
 
@@ -32,6 +35,9 @@ public:
 
     const std::string& conf_file() const noexcept
     { return conf_file_; }
+
+    const std::string& conf_param() const noexcept
+    { return conf_param_; }
 
     void set_log(const LogPtr& log) noexcept
     { log_ = log; }

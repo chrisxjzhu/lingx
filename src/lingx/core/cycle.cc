@@ -3,6 +3,7 @@
 #include <lingx/core/path.h>
 #include <lingx/core/file.h>
 #include <lingx/core/module.h>
+#include <lingx/core/conf_file.h>
 #include <lingx/core/process.h>  // Os_signal_process()
 #include <lingx/core/process_cycle.h>
 #include <lingx/core/log.h>
@@ -66,24 +67,24 @@ rc_t Cycle::log_redirect_stderr() noexcept
 {
     /*
      * if (log_use_stderr_)
-     *    return LNX_OK;
+     *    return OK;
      */
 
     int fd = log_->file()->fd();
     if (fd != STDERR_FILENO) {
         if (::dup2(fd, STDERR_FILENO) == -1) {
             Log_error(log_, Log::ALERT, errno, "dup2(, STDERR_FILENO) failed");
-            return LNX_ERROR;
+            return ERROR;
         }
     }
 
-    return LNX_OK;
+    return OK;
 }
 
 rc_t Cycle::log_open_default_()
 {
     if (Get_file_log(new_log_))
-        return LNX_OK;
+        return OK;
 
     LogPtr log = std::make_shared<Log>();
 
@@ -94,12 +95,12 @@ rc_t Cycle::log_open_default_()
 
     log->set_file(log_open_file(LNX_ERROR_LOG_PATH));
     if (!log->file())
-        return LNX_ERROR;
+        return ERROR;
 
     if (log != new_log_)
         Log_insert(new_log_, log);
 
-    return LNX_OK;
+    return OK;
 }
 
 CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
@@ -127,7 +128,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 
     cycle->modules_ = Modules;
 
-    for (Module& mod : cycle->modules_) {
+    for (const Module& mod : cycle->modules_) {
         if (mod.type() != CORE_MODULE)
             continue;
 
@@ -139,12 +140,23 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
         }
     }
 
+    Conf conf(cycle);
+    conf.set_log(log);
+    conf.set_module_type(CORE_MODULE);
+    conf.set_cmd_type(MAIN_CONF);
+
+    if (conf.param() != CONF_OK)
+        return nullptr;
+
+    if (conf.parse(cycle->conf_file()) != CONF_OK)
+        return nullptr;
+
     if (Opt_test_config && !Opt_quiet_mode) {
         Log::Printf(0, "the configuration file %s syntax is ok",
                     cycle->conf_file_.c_str());
     }
 
-    for (Module& mod : cycle->modules_) {
+    for (const Module& mod : cycle->modules_) {
         if (mod.type() != CORE_MODULE)
             continue;
 
@@ -152,7 +164,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 
         if (ctx.init_conf) {
             if (ctx.init_conf(cycle, cycle->conf_ctx_[mod.index()])
-                == LNX_CONF_ERROR)
+                == CONF_ERROR)
             {
                 return nullptr;
             }
@@ -165,7 +177,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
 
     if (Opt_test_config) {
-        if (Create_pidfile(ccf->pid_path, log) != LNX_OK)
+        if (Create_pidfile(ccf->pid_path, log) != OK)
             return nullptr;
     } else if (!old_cycle->is_init_cycle()) {
         /*
@@ -177,14 +189,14 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
         if (ccf->pid_path != old_ccf->pid_path) {
             /* new pid file name */
 
-            if (Create_pidfile(ccf->pid_path, log) != LNX_OK)
+            if (Create_pidfile(ccf->pid_path, log) != OK)
                 return nullptr;
 
             Delete_pidfile(old_cycle);
         }
     }
 
-    if (cycle->log_open_default_() != LNX_OK)
+    if (cycle->log_open_default_() != OK)
         return nullptr;
 
     cycle->log_ = cycle->new_log_;
@@ -220,13 +232,14 @@ int Signal_process(const CyclePtr& cycle, const char* sig) noexcept
         return 1;
     }
 
-    file.set_log(cycle->log());
-
     char buf[MAX_INT_LEN + 2];
 
     ssize_t n = file.read(buf, sizeof(buf), 0);
-    if (n <= 0)
+    if (n <= 0) {
+        Log_error(cycle->log(), Log::CRIT, errno,
+                  "read() \"%s\" failed", ccf->pid_path.c_str());
         return 1;
+    }
 
     /* close it early */
     file.close();
@@ -248,29 +261,34 @@ int Signal_process(const CyclePtr& cycle, const char* sig) noexcept
 rc_t Create_pidfile(const std::string& path, const LogPtr& log) noexcept
 {
     if (Process_type > PROCESS_MASTER)
-        return LNX_OK;
+        return OK;
 
-    File file(log);
+    File file;
 
     int flags = O_RDWR | O_CREAT;
     if (!Opt_test_config)
         flags |= O_TRUNC;
 
-    if (file.open(path.c_str(), flags) == -1)
-        return LNX_ERROR;
+    if (file.open(path.c_str(), flags) == -1) {
+        Log_error(log, Log::EMERG, errno, "open() \"%s\" failed", path.c_str());
+        return ERROR;
+    }
 
     if (!Opt_test_config) {
         char pid[MAX_INT_LEN + 2];
         int len = std::snprintf(pid, sizeof(pid), "%d\n", Pid);
 
         if (len <= 0 || (size_t) len >= sizeof(pid))
-            return LNX_ERROR;
+            return ERROR;
 
-        if (file.write(pid, len, 0) == -1)
-            return LNX_ERROR;
+        if (file.write(pid, len, 0) == -1) {
+            Log_error(log, Log::CRIT, errno,
+                      "write() \"%s\" failed", path.c_str());
+            return ERROR;
+        }
     }
 
-    return LNX_OK;
+    return OK;
 }
 
 void Delete_pidfile(const CyclePtr& cycle) noexcept

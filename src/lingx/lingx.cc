@@ -6,10 +6,12 @@
 #include <lingx/core/path.h>
 #include <lingx/core/cycle.h>
 #include <lingx/core/module.h>
+#include <lingx/core/conf_file.h>
 #include <lingx/core/process.h>  // Init_signals()
 #include <lingx/core/process_cycle.h>
 #include <lingx/core/daemon.h>   // Daemonize()
 #include <unistd.h>  // getpid()
+#include <cstddef>   // offsetof()
 
 namespace lnx {
 namespace {
@@ -30,7 +32,18 @@ const char* Opt_conf_param_ = "";
 const char* Opt_signal_     = "";
 
 std::vector<Command> Core_commands_ {
-    Command { "daemon", MAIN_CONF }
+    Command {
+        "daemon",
+         MAIN_CONF|CONF_FLAG,
+         Set_bool_slot,
+         offsetof(CoreConf, daemon)
+    },
+    Command {
+        "master_process",
+         MAIN_CONF|CONF_FLAG,
+         Set_bool_slot,
+         offsetof(CoreConf, master)
+    }
 };
 
 CoreModuleCtx Core_module_ctx_ {
@@ -54,7 +67,7 @@ int main(int argc, const char* const argv[])
 {
     using namespace lnx;
 
-    if (Get_options_(argc, argv) != LNX_OK)
+    if (Get_options_(argc, argv) != OK)
         return 1;
 
     if (Opt_show_version_) {
@@ -75,7 +88,7 @@ int main(int argc, const char* const argv[])
 
     init_cycle->set_log(log);
 
-    if (Process_options_(init_cycle) != LNX_OK)
+    if (Process_options_(init_cycle) != OK)
         return 1;
 
     Preinit_modules();
@@ -103,20 +116,20 @@ int main(int argc, const char* const argv[])
     if (ccf->master && Process_type == PROCESS_SINGLE)
         Process_type = PROCESS_MASTER;
 
-    if (Init_signals(cycle->log()) != LNX_OK)
+    if (Init_signals(cycle->log()) != OK)
         return 1;
 
     if (ccf->daemon) {
-        if (Daemonize(cycle->log()) != LNX_OK)
+        if (Daemonize(cycle->log()) != OK)
             return 1;
 
         Daemonized = true;
     }
 
-    if (Create_pidfile(ccf->pid_path, cycle->log()) != LNX_OK)
+    if (Create_pidfile(ccf->pid_path, cycle->log()) != OK)
         return 1;
 
-    if (cycle->log_redirect_stderr() != LNX_OK)
+    if (cycle->log_redirect_stderr() != OK)
         return 1;
 
     if (log->file()->fd() != STDERR_FILENO) {
@@ -146,7 +159,7 @@ void Show_version_info_() noexcept
     if (Opt_show_help_) {
         Write_stderr(
             "Usage: lingx [-?hvVtq] [-s signal] [-c filename] "
-                         "[-p prefix]\n"
+                         "[-p prefix] [-g directives]\n"
                          "\n"
             "Options:\n"
             "  -?,-h         : this help\n"
@@ -160,6 +173,7 @@ void Show_version_info_() noexcept
             "  -p prefix     : set prefix path (default: " LNX_PREFIX ")\n"
             "  -c filename   : set configuration file (default: " LNX_CONF_PATH
                                ")\n"
+            "  -g directives : set global directives out of configuration file\n"
             "\n"
         );
     }
@@ -177,7 +191,7 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
 
         if (*p++ != '-') {
             Log::Printf(0, "invalid option: \"%s\"", argv[i]);
-            return LNX_ERROR;
+            return ERROR;
         }
 
         while (*p) {
@@ -217,7 +231,7 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
                 }
 
                 Log::Printf(0, "option \"-p\" requires directory name");
-                return LNX_ERROR;
+                return ERROR;
 
             case 'c':
                 if (*p) {
@@ -231,7 +245,21 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
                 }
 
                 Log::Printf(0, "option \"-c\" requires file name");
-                return LNX_ERROR;
+                return ERROR;
+
+            case 'g':
+                if (*p) {
+                    Opt_conf_param_ = p;
+                    goto next;
+                }
+
+                if (argv[++i]) {
+                    Opt_conf_param_ = argv[i];
+                    goto next;
+                }
+
+                Log::Printf(0, "option \"-g\" requires parameter");
+                return ERROR;
 
             case 's':
                 if (*p) {
@@ -240,7 +268,7 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
                     Opt_signal_ = argv[i];
                 } else {
                     Log::Printf(0, "option \"-s\" requires parameter");
-                    return LNX_ERROR;
+                    return ERROR;
                 }
 
                 if (std::strcmp(Opt_signal_, "stop") == 0
@@ -253,11 +281,11 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
                 }
 
                 Log::Printf(0, "invalid option: \"-s %s\"", Opt_signal_);
-                return LNX_ERROR;
+                return ERROR;
 
             default:
                 Log::Printf(0, "invalid option: \"%c\"", *(p - 1));
-                return LNX_ERROR;
+                return ERROR;
             }
         }
 
@@ -265,7 +293,7 @@ rc_t Get_options_(int argc, const char *const argv[]) noexcept
         continue;
     }
 
-    return LNX_OK;
+    return OK;
 }
 
 rc_t Process_options_(const CyclePtr& cycle)
@@ -277,7 +305,7 @@ rc_t Process_options_(const CyclePtr& cycle)
     if (Opt_test_config)
         cycle->log()->set_level(Log::Level::INFO);
 
-    return LNX_OK;
+    return OK;
 }
 
 MConfPtr Core_module_create_conf_(const CyclePtr& cycle)
@@ -299,7 +327,7 @@ const char* Core_module_init_conf_(const CyclePtr& cycle, const MConfPtr& conf)
 
     ccf->pid_path = Path::Get_full_name(cycle->prefix(), ccf->pid_path);
 
-    return LNX_CONF_OK;
+    return CONF_OK;
 }
 
 }

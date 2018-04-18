@@ -13,7 +13,7 @@ rc_t Daemonize(const LogPtr& log) noexcept
     switch (::fork()) {
     case -1:
         Log_error(log, Log::EMERG, errno, "fork() failed");
-        return LNX_ERROR;
+        return ERROR;
 
     /* child */
     case 0:
@@ -28,7 +28,7 @@ rc_t Daemonize(const LogPtr& log) noexcept
 
     if (::setsid() == -1) {
         Log_error(log, Log::EMERG, errno, "setsid() failed");
-        return LNX_ERROR;
+        return ERROR;
     }
 
     ::umask(0);
@@ -36,17 +36,17 @@ rc_t Daemonize(const LogPtr& log) noexcept
     int fd = ::open("/dev/null", O_RDWR);
     if (fd == -1) {
         Log_error(log, Log::EMERG, errno, "open(\"/dev/null\") failed");
-        return LNX_ERROR;
+        return ERROR;
     }
 
     if (::dup2(fd, STDIN_FILENO) == -1) {
         Log_error(log, Log::EMERG, errno, "dup2(STDIN) failed");
-        return LNX_ERROR;
+        return ERROR;
     }
 
     if (::dup2(fd, STDOUT_FILENO) == -1) {
         Log_error(log, Log::EMERG, errno, "dup2(STDOUT) failed");
-        return LNX_ERROR;
+        return ERROR;
     }
 
 #if 0
@@ -54,18 +54,18 @@ rc_t Daemonize(const LogPtr& log) noexcept
 
     if (::dup2(fd, STDERR_FILENO) == -1) {
         Log_error(log, Log::EMERG, errno, "dup2(STDERR) failed");
-        return LNX_ERROR;
+        return ERROR;
     }
 #endif
 
     if (fd > STDERR_FILENO) {
         if (::close(fd) == -1) {
             Log_error(log, Log::EMERG, errno, "close() failed");
-            return LNX_ERROR;
+            return ERROR;
         }
     }
 
-    return LNX_OK;
+    return OK;
 }
 
 }

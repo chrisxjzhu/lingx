@@ -1,19 +1,14 @@
 #include <lingx/core/file.h>
-#include <lingx/core/error.h>
-#include <lingx/core/log.h>
 #include <unistd.h>
 #include <fcntl.h>
 
 namespace lnx {
 
-int File::open(const char* path, int flags, mode_t mode)
+int File::open(const char* name, int flags, mode_t mode)
 {
-    fd_ = ::open(path, flags, mode);
-
+    fd_ = ::open(name, flags, mode);
     if (fd_ != -1)
-        path_ = path;
-    else
-        Log_error(log_, Log::CRIT, errno, "open() \"%s\" failed", path);
+        name_ = name;
 
     return fd_;
 }
@@ -21,11 +16,8 @@ int File::open(const char* path, int flags, mode_t mode)
 ssize_t File::read(void* buf, size_t len, off_t off) noexcept
 {
     ssize_t n = ::pread(fd_, buf, len, off);
-    if (n == -1) {
-        Log_error(log_, Log::CRIT, errno,
-                  "pread() \"%s\" failed", path_.c_str());
+    if (n == -1)
         return n;
-    }
 
     offset_ += n;
     return n;
@@ -40,9 +32,6 @@ ssize_t File::write(const void* buf, size_t len, off_t off) noexcept
         if (n == -1) {
             if (errno == EINTR)
                 continue;
-
-            Log_error(log_, Log::CRIT, errno,
-                      "pwrite() \"%s\" failed", path_.c_str());
 
             return -1;
         }
@@ -66,10 +55,7 @@ int File::close() noexcept
 
     if (fd_ != -1) {
         rc = ::close(fd_);
-        if (rc == -1)
-            Log_error(log_, Log::ALERT, errno,
-                      "close() \"%s\" failed", path_.c_str());
-        else
+        if (rc == 0)
             fd_ = -1;
     }
 
