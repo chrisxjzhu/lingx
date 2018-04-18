@@ -103,6 +103,84 @@ rc_t Cycle::log_open_default_()
     return OK;
 }
 
+uint Cycle::count_modules(int type) noexcept
+{
+    uint next = 0, max = 0;
+
+    /* count appropriate modules, set up their indices */
+    for (Module& mod : modules_) {
+        if (mod.type() != type)
+            continue;
+
+        if (mod.ctx_index() != (uint) -1) {
+            /* if ctx_index was assigned, preserve it */
+            if (mod.ctx_index() > max)
+                max = mod.ctx_index();
+
+            if (mod.ctx_index() == next)
+                ++next;
+
+            continue;
+        }
+
+        /* search for some free index */
+        mod.set_ctx_index(count_module_ctx_index_(type, next));
+
+        if (mod.ctx_index() > max)
+            max = mod.ctx_index();
+
+        next = mod.ctx_index() + 1;
+    }
+
+    /*
+     * make sure the number returned is big enough for previous
+     * cycle as well, else there will be problems if the number
+     * will be stored in a global variable (as it's used to be)
+     * and we'll have to roll back to the previous cycle
+     */
+
+    if (old_cycle_) {
+        for (const Module& mod : old_cycle_->modules_) {
+            if (mod.type() != type)
+                continue;
+
+            if (mod.ctx_index() > max)
+                max = mod.ctx_index();
+        }
+    }
+
+    return max + 1;
+}
+
+uint Cycle::count_module_ctx_index_(int type, uint index) noexcept
+{
+again:
+    /* find an unused ctx_index */
+    for (const Module& mod : modules_) {
+        if (mod.type() != type)
+            continue;
+
+        if (mod.ctx_index() == index) {
+            ++index;
+            goto again;
+        }
+    }
+
+    if (old_cycle_) {
+        for (const Module& mod : old_cycle_->modules_) {
+            if (mod.type() != type)
+                continue;
+
+            if (mod.ctx_index() == index) {
+                ++index;
+                goto again;
+            }
+        }
+    }
+
+    return index;
+}
+
 CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 {
     Timezone_update();
@@ -124,7 +202,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     cycle->conf_file_ = old_cycle->conf_file_;
     cycle->conf_param_ = old_cycle->conf_param_;
 
-    cycle->conf_ctx_.resize(Max_modules_n);
+    cycle->conf_ctxs_.resize(Max_modules_n);
 
     cycle->modules_ = Modules;
 
@@ -136,12 +214,13 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 
         if (ctx.create_conf) {
             MConfPtr cf = ctx.create_conf(cycle);
-            cycle->conf_ctx_[mod.index()] = cf;
+            cycle->conf_ctxs_[mod.index()] = cf;
         }
     }
 
     Conf conf(cycle);
     conf.set_log(log);
+    conf.set_ctxs(&cycle->conf_ctxs());
     conf.set_module_type(CORE_MODULE);
     conf.set_cmd_type(MAIN_CONF);
 
@@ -163,7 +242,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
         const CoreModuleCtx& ctx = static_cast<const CoreModuleCtx&>(mod.ctx());
 
         if (ctx.init_conf) {
-            if (ctx.init_conf(cycle, cycle->conf_ctx_[mod.index()])
+            if (ctx.init_conf(cycle, cycle->conf_ctxs_[mod.index()])
                 == CONF_ERROR)
             {
                 return nullptr;

@@ -33,6 +33,12 @@ using CyclePtr = std::shared_ptr<Cycle>;
 struct MConf {};
 using  MConfPtr = std::shared_ptr<MConf>;
 
+struct MConfs : MConf {
+    std::vector<MConfPtr> ctxs;
+};
+
+struct ModuleCtx {};
+
 class OpenFile;
 using OpenFilePtr = std::shared_ptr<OpenFile>;
 

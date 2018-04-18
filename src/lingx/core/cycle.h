@@ -19,10 +19,10 @@ public:
     Cycle() = default;
 
     bool is_init_cycle() const noexcept
-    { return conf_ctx_.empty(); }
+    { return conf_ctxs_.empty(); }
 
-    const std::vector<MConfPtr>& conf_ctx() const noexcept
-    { return conf_ctx_; }
+    std::vector<MConfPtr>& conf_ctxs() noexcept
+    { return conf_ctxs_; }
 
     const std::vector<std::reference_wrapper<Module>>& modules() const noexcept
     { return modules_; }
@@ -52,10 +52,14 @@ public:
 
     rc_t log_redirect_stderr() noexcept;
 
+    uint count_modules(int type) noexcept;
+
 private:
     rc_t log_open_default_();
 
-    std::vector<MConfPtr> conf_ctx_;
+    uint count_module_ctx_index_(int type, uint index) noexcept;
+
+    std::vector<MConfPtr> conf_ctxs_;
 
     LogPtr new_log_;
     LogPtr log_;

@@ -37,6 +37,7 @@ enum CommandType {
     DIRECT_CONF   = 0x00010000,
 
     MAIN_CONF     = 0x01000000,
+    EVENT_CONF    = 0x02000000,
     ANY_CONF      = 0x1F000000
 };
 
@@ -50,7 +51,7 @@ class Conf;
 struct Command {
     std::string_view name;
     int type = 0;
-    const char *(*set)(const Conf&, const Command&, const MConfPtr&);
+    const char *(*set)(const Conf&, const Command&, MConfPtr&);
     size_t offset;
 };
 
@@ -66,13 +67,18 @@ struct ConfFile {
 
 class Conf {
 public:
-    Conf(const Conf&) = delete;
-    Conf& operator=(const Conf&) = delete;
+    explicit Conf(const CyclePtr& cycle) noexcept
+        : cycle_(cycle)
+    { }
 
-    explicit Conf(const CyclePtr& cycle) noexcept;
+    const CyclePtr& cycle() const noexcept
+    { return cycle_; }
 
     void set_log(const LogPtr& log) noexcept
     { log_ = log; }
+
+    void set_ctxs(std::vector<MConfPtr>* ctxs) noexcept
+    { ctxs_ = ctxs; }
 
     void set_module_type(int type) noexcept
     { module_type_ = type; }
@@ -96,13 +102,12 @@ private:
     ConfFile* conf_file_ = nullptr;
     LogPtr log_;
 
-    const std::vector<MConfPtr>& ctx_;
+    std::vector<MConfPtr>* ctxs_ = nullptr;
     int module_type_ = 0;
     int cmd_type_ = 0;
 };
 
-const char* Set_bool_slot(const Conf& cf, const Command& cmd,
-                          const MConfPtr& conf) noexcept;
+const char* Set_bool_slot(const Conf& cf, const Command& cmd, MConfPtr& conf);
 
 }
 

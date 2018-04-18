@@ -30,10 +30,6 @@ enum {
     CONF_FILE_DONE   = 3
 };
 
-Conf::Conf(const CyclePtr& cycle) noexcept
-    : cycle_(cycle), ctx_(cycle->conf_ctx())
-{ }
-
 const char* Conf::param() noexcept
 {
     std::string_view param = cycle_->conf_param();
@@ -482,7 +478,12 @@ rc_t Conf::handle_(int last) noexcept
             }
 
             /* set up the directive's configuration context */
-            MConfPtr conf = ctx_[mod.index()];
+
+            MConfPtr dummy;
+
+            uint idx = (cmd.type & MAIN_CONF) ? mod.index()
+                                              : mod.ctx_index();
+            MConfPtr& conf = ctxs_ ? (*ctxs_)[idx] : dummy;
 
             /* TODO: catch exceptions? */
             const char* rv = cmd.set(*this, cmd, conf);
@@ -562,8 +563,7 @@ const char* Conf::parse_bool_arg(const char* cmd, bool* val) const noexcept
     return CONF_OK;
 }
 
-const char* Set_bool_slot(const Conf& cf, const Command& cmd,
-                          const MConfPtr& conf) noexcept
+const char* Set_bool_slot(const Conf& cf, const Command& cmd, MConfPtr& conf)
 {
     char* p  = (char*) conf.get();
     bool* bp = (bool*) (p + cmd.offset);

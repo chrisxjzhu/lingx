@@ -7,10 +7,9 @@ namespace lnx {
 
 struct Command;
 
-struct ModuleCtx {};
-
-enum ModuleType {
-    CORE_MODULE = 0x45524F43   /* "CORE" */
+enum {
+    CORE_MODULE  = 0x45524F43, /* "CORE" */
+    EVENT_MODULE = 0x544E5645  /* "EVNT" */
 };
 
 class Module {
@@ -23,12 +22,15 @@ public:
     Module(const char* name,
            const ModuleCtx& ctx,
            const std::vector<Command>& commands,
-           ModuleType type)
+           int type)
         : name_(name), ctx_(ctx), commands_(commands), type_(type)
     { }
 
     uint index() const noexcept
     { return index_; }
+
+    uint ctx_index() const noexcept
+    { return ctx_index_; }
 
     const ModuleCtx& ctx() const noexcept
     { return ctx_; }
@@ -36,15 +38,19 @@ public:
     const std::vector<Command>& commands() const noexcept
     { return commands_; }
 
-    ModuleType type() const noexcept
+    int type() const noexcept
     { return type_; }
+
+    void set_ctx_index(uint index) noexcept
+    { ctx_index_ = index; }
 
 private:
     uint index_ = -1;
+    uint ctx_index_ = -1;
     std::string_view name_;
     const ModuleCtx& ctx_;
     const std::vector<Command>& commands_;
-    ModuleType type_;
+    int type_;
 };
 
 struct CoreModuleCtx : ModuleCtx {
@@ -70,6 +76,6 @@ void Preinit_modules();
 }
 
 #define Get_module_conf(type, cycle, module)                                 \
-    std::static_pointer_cast<type>((cycle)->conf_ctx()[(module).index()])
+    std::static_pointer_cast<type>((cycle)->conf_ctxs()[(module).index()])
 
 #endif
