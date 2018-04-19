@@ -8,6 +8,11 @@ namespace lnx {
 struct EventActions {
 };
 
+struct EventConf : MConf {
+    uint   connections;
+    flag_t multi_accept;
+};
+
 struct EventModuleCtx : ModuleCtx {
     typedef std::function<MConfPtr(const CyclePtr&)> create_conf_t;
     typedef std::function<const char*(const CyclePtr&, const MConfPtr&)> init_conf_t;

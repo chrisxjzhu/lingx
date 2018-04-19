@@ -42,6 +42,9 @@ public:
     void set_log(const LogPtr& log) noexcept
     { log_ = log; }
 
+    void set_connection_n(uint conn_n) noexcept
+    { connection_n_ = conn_n; }
+
     void set_prefix(const char* prefix);
     void set_conf_file(const std::string& file);
 
@@ -68,6 +71,8 @@ private:
 
     std::list<OpenFilePtr> open_files_;
 
+    uint connection_n_ = 0;
+
     CyclePtr old_cycle_;
 
     std::string prefix_;
@@ -77,8 +82,8 @@ private:
 };
 
 struct CoreConf : MConf {
-    bool daemon;
-    bool master;
+    flag_t daemon;
+    flag_t master;
     std::string pid_path;
 };
 

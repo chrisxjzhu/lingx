@@ -14,6 +14,11 @@
 #include <fcntl.h>   // open()
 
 namespace lnx {
+namespace {
+
+rc_t Init_modules_(const CyclePtr& cycle);
+
+}
 
 CyclePtr Cur_cycle = nullptr;
 
@@ -285,6 +290,9 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     if (!Use_stderr)
         cycle->log_redirect_stderr();
 
+    if (Init_modules_(cycle) != OK)
+        std::exit(1);
+
     /* close old open files */
     old_cycle->open_files_.clear();
 
@@ -378,6 +386,21 @@ void Delete_pidfile(const CyclePtr& cycle) noexcept
     if (::unlink(path) == -1)
         Log_error(cycle->log(), Log::ALERT, errno,
                   "unlink() \"%s\" failed", path);
+}
+
+namespace {
+
+rc_t Init_modules_(const CyclePtr& cycle)
+{
+    for (const Module& mod : cycle->modules()) {
+        if (mod.init_module)
+            if (mod.init_module(cycle) != OK)
+                return ERROR;
+    }
+
+    return OK;
+}
+
 }
 
 }

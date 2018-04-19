@@ -541,9 +541,9 @@ void Conf::log_error(Log::Level lvl, const char* fmt, ...) const noexcept
               conf_file_->file.name().c_str(), conf_file_->line);
 }
 
-const char* Conf::parse_bool_arg(const char* cmd, bool* val) const noexcept
+const char* Conf::parse_flag_arg(const char* cmd, flag_t* fp) const noexcept
 {
-    if (*val)
+    if (*fp != (flag_t) UNSET)
         return "is duplicate";
 
     assert(args_.size() == 2);
@@ -551,9 +551,9 @@ const char* Conf::parse_bool_arg(const char* cmd, bool* val) const noexcept
     const char* arg = args_[1].c_str();
 
     if (std::strcmp(arg, "on") == 0)
-        *val = true;
+        *fp = ON;
     else if (std::strcmp(arg, "off") == 0)
-        *val = false;
+        *fp = OFF;
     else {
         log_error(Log::EMERG, "invalid value \"%s\" in \"%s\" directive, "
                               "it must be \"on\" or \"off\"", arg, cmd);
@@ -563,12 +563,12 @@ const char* Conf::parse_bool_arg(const char* cmd, bool* val) const noexcept
     return CONF_OK;
 }
 
-const char* Set_bool_slot(const Conf& cf, const Command& cmd, MConfPtr& conf)
+const char* Set_flag_slot(const Conf& cf, const Command& cmd, MConfPtr& conf)
 {
-    char* p  = (char*) conf.get();
-    bool* bp = (bool*) (p + cmd.offset);
+    char* p = (char*) conf.get();
+    flag_t* fp = (flag_t*) (p + cmd.offset);
 
-    const char* rv = cf.parse_bool_arg(cmd.name.data(), bp);
+    const char* rv = cf.parse_flag_arg(cmd.name.data(), fp);
     if (rv != CONF_OK)
         return rv;
 

@@ -46,6 +46,11 @@ const size_t CONF_MAX_ARGS = 8;
 const char* const CONF_OK = nullptr;
 const char* const CONF_ERROR = (const char*) -1;
 
+const flag_t OFF = 0;
+const flag_t ON  = 1;
+
+const int UNSET  = -1;
+
 class Conf;
 
 struct Command {
@@ -91,7 +96,7 @@ public:
 
     void log_error(Log::Level lvl, const char* fmt, ...) const noexcept;
 
-    const char* parse_bool_arg(const char* cmd, bool* val) const noexcept;
+    const char* parse_flag_arg(const char* cmd, flag_t* fp) const noexcept;
 
 private:
     int read_token_() noexcept;
@@ -107,7 +112,14 @@ private:
     int cmd_type_ = 0;
 };
 
-const char* Set_bool_slot(const Conf& cf, const Command& cmd, MConfPtr& conf);
+template <typename T>
+void Conf_init_value(T& conf, T val)
+{
+    if (conf == (T) UNSET)
+        conf = val;
+}
+
+const char* Set_flag_slot(const Conf& cf, const Command& cmd, MConfPtr& conf);
 
 }
 

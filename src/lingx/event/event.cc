@@ -3,13 +3,21 @@
 #include <lingx/core/conf_file.h>
 #include <lingx/core/cycle.h>
 #include <lingx/core/log.h>
+#include <cstddef>
 
 namespace lnx {
 namespace {
 
+const uint DEFAULT_CONNECTIONS = 512;
+
 const char* Events_block_(const Conf& cf, const Command& cmd, MConfPtr& conf);
 
 const char* Events_init_conf_(const CyclePtr& cycle, const MConfPtr& conf);
+
+MConfPtr Event_core_create_conf_(const CyclePtr& cycle);
+const char* Event_core_init_conf_(const CyclePtr& cycle, const MConfPtr& conf);
+
+rc_t Event_core_module_init_(const CyclePtr& cycle);
 
 std::vector<Command> Events_commands_ {
     Command {
@@ -26,13 +34,39 @@ CoreModuleCtx Events_module_ctx_ {
     Events_init_conf_
 };
 
+
+std::vector<Command> Event_core_commands_ {
+    Command {
+        "multi_accept",
+        EVENT_CONF|CONF_FLAG,
+        Set_flag_slot,
+        offsetof(EventConf, multi_accept)
+    }
+};
+
+EventModuleCtx Event_core_module_ctx_ {
+    "event_core",
+    Event_core_create_conf_,
+    Event_core_init_conf_,
+    { }
+};
+
 }
 
 Module Events_module {
     "lnx_events_module",
     Events_module_ctx_,
     Events_commands_,
-    CORE_MODULE
+    CORE_MODULE,
+    nullptr
+};
+
+Module Event_core_module {
+    "lnx_event_core_module",
+    Event_core_module_ctx_,
+    Event_core_commands_,
+    EVENT_MODULE,
+    Event_core_module_init_
 };
 
 namespace {
@@ -97,6 +131,37 @@ const char* Events_init_conf_(const CyclePtr& cycle, const MConfPtr&)
     }
 
     return CONF_OK;
+}
+
+MConfPtr Event_core_create_conf_(const CyclePtr&)
+{
+    std::shared_ptr<EventConf> ecf = std::make_shared<EventConf>();
+
+    ecf->connections = UNSET;
+    ecf->multi_accept = UNSET;
+
+    return ecf;
+}
+
+const char* Event_core_init_conf_(const CyclePtr& cycle, const MConfPtr& conf)
+{
+    std::shared_ptr<EventConf> ecf = std::static_pointer_cast<EventConf>(conf);
+
+    Conf_init_value(ecf->connections, DEFAULT_CONNECTIONS);
+    cycle->set_connection_n(ecf->connections);
+
+    Conf_init_value(ecf->multi_accept, OFF);
+
+    return CONF_OK;
+}
+
+rc_t Event_core_module_init_(const CyclePtr& cycle)
+{
+    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
+    if (!ccf->master)
+        return OK;
+
+    return OK;
 }
 
 }

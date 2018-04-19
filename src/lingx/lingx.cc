@@ -35,13 +35,13 @@ std::vector<Command> Core_commands_ {
     Command {
         "daemon",
          MAIN_CONF|CONF_FLAG,
-         Set_bool_slot,
+         Set_flag_slot,
          offsetof(CoreConf, daemon)
     },
     Command {
         "master_process",
          MAIN_CONF|CONF_FLAG,
-         Set_bool_slot,
+         Set_flag_slot,
          offsetof(CoreConf, master)
     }
 };
@@ -58,7 +58,8 @@ Module Core_module {
     "lnx_core_module",
     Core_module_ctx_,
     Core_commands_,
-    CORE_MODULE
+    CORE_MODULE,
+    nullptr
 };
 
 }
@@ -308,12 +309,12 @@ rc_t Process_options_(const CyclePtr& cycle)
     return OK;
 }
 
-MConfPtr Core_module_create_conf_(const CyclePtr& cycle)
+MConfPtr Core_module_create_conf_(const CyclePtr&)
 {
     std::shared_ptr<CoreConf> ccf = std::make_shared<CoreConf>();
 
-    ccf->daemon = false;
-    ccf->master = false;
+    ccf->daemon = UNSET;
+    ccf->master = UNSET;
 
     return ccf;
 }
@@ -321,6 +322,9 @@ MConfPtr Core_module_create_conf_(const CyclePtr& cycle)
 const char* Core_module_init_conf_(const CyclePtr& cycle, const MConfPtr& conf)
 {
     std::shared_ptr<CoreConf> ccf = std::static_pointer_cast<CoreConf>(conf);
+
+    Conf_init_value(ccf->daemon, ON);
+    Conf_init_value(ccf->master, ON);
 
     if (ccf->pid_path.empty())
         ccf->pid_path = LNX_PID_PATH;

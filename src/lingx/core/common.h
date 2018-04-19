@@ -21,6 +21,8 @@ enum rc_t {
     ABORT    = -6
 };
 
+typedef uint flag_t;
+
 constexpr size_t MAX_INT_LEN   = sizeof("-2147483648") - 1;
 constexpr size_t MAX_LONG_LEN  = sizeof("-9223372036854775808") - 1;
 

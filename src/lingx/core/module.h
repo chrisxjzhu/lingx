@@ -16,14 +16,18 @@ class Module {
     friend void Preinit_modules();
 
 public:
+    typedef std::function<rc_t(const CyclePtr&)> init_module_t;
+
     Module(const Module&) = delete;
     Module& operator=(const Module&) = delete;
 
     Module(const char* name,
            const ModuleCtx& ctx,
            const std::vector<Command>& commands,
-           int type)
-        : name_(name), ctx_(ctx), commands_(commands), type_(type)
+           int type,
+           const init_module_t& init_module)
+        : name_(name), ctx_(ctx), commands_(commands), type_(type),
+          init_module(init_module)
     { }
 
     uint index() const noexcept
@@ -51,6 +55,9 @@ private:
     const ModuleCtx& ctx_;
     const std::vector<Command>& commands_;
     int type_;
+
+public:
+    const init_module_t init_module;
 };
 
 struct CoreModuleCtx : ModuleCtx {
