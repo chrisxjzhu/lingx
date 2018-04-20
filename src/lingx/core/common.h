@@ -44,6 +44,9 @@ struct ModuleCtx {};
 class OpenFile;
 using OpenFilePtr = std::shared_ptr<OpenFile>;
 
+struct Event;
+struct Connection;
+
 }
 
 #endif

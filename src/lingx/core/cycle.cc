@@ -14,11 +14,6 @@
 #include <fcntl.h>   // open()
 
 namespace lnx {
-namespace {
-
-rc_t Init_modules_(const CyclePtr& cycle);
-
-}
 
 CyclePtr Cur_cycle = nullptr;
 
@@ -108,7 +103,18 @@ rc_t Cycle::log_open_default_()
     return OK;
 }
 
-uint Cycle::count_modules(int type) noexcept
+rc_t Cycle::init_modules_()
+{
+    for (const Module& mod : modules_) {
+        if (mod.init_module)
+            if (mod.init_module(this) != OK)
+                return ERROR;
+    }
+
+    return OK;
+}
+
+uint Cycle::count_modules(int type) const noexcept
 {
     uint next = 0, max = 0;
 
@@ -157,7 +163,7 @@ uint Cycle::count_modules(int type) noexcept
     return max + 1;
 }
 
-uint Cycle::count_module_ctx_index_(int type, uint index) noexcept
+uint Cycle::count_module_ctx_index_(int type, uint index) const noexcept
 {
 again:
     /* find an unused ctx_index */
@@ -218,7 +224,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
         const CoreModuleCtx& ctx = static_cast<const CoreModuleCtx&>(mod.ctx());
 
         if (ctx.create_conf) {
-            MConfPtr cf = ctx.create_conf(cycle);
+            MConfPtr cf = ctx.create_conf(cycle.get());
             cycle->conf_ctxs_[mod.index()] = cf;
         }
     }
@@ -247,7 +253,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
         const CoreModuleCtx& ctx = static_cast<const CoreModuleCtx&>(mod.ctx());
 
         if (ctx.init_conf) {
-            if (ctx.init_conf(cycle, cycle->conf_ctxs_[mod.index()])
+            if (ctx.init_conf(cycle.get(), cycle->conf_ctxs_[mod.index()].get())
                 == CONF_ERROR)
             {
                 return nullptr;
@@ -290,7 +296,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     if (!Use_stderr)
         cycle->log_redirect_stderr();
 
-    if (Init_modules_(cycle) != OK)
+    if (cycle->init_modules_() != OK)
         std::exit(1);
 
     /* close old open files */
@@ -386,21 +392,6 @@ void Delete_pidfile(const CyclePtr& cycle) noexcept
     if (::unlink(path) == -1)
         Log_error(cycle->log(), Log::ALERT, errno,
                   "unlink() \"%s\" failed", path);
-}
-
-namespace {
-
-rc_t Init_modules_(const CyclePtr& cycle)
-{
-    for (const Module& mod : cycle->modules()) {
-        if (mod.init_module)
-            if (mod.init_module(cycle) != OK)
-                return ERROR;
-    }
-
-    return OK;
-}
-
 }
 
 }

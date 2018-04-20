@@ -1,16 +1,22 @@
 add_library(lingx_core
             conf_file.cc
+            connection.cc
             cycle.cc
             daemon.cc
             error.cc
+            event.cc
             file.cc
+            linux_init.cc
             log.cc
             module.cc
             modules.cc
             open_file.cc
             path.cc
+            posix_init.cc
             process.cc
             process_cycle.cc
+            recv.cc
+            send.cc
             strings.cc
             times.cc
 )

@@ -55,12 +55,14 @@ public:
 
     rc_t log_redirect_stderr() noexcept;
 
-    uint count_modules(int type) noexcept;
+    uint count_modules(int type) const noexcept;
 
 private:
     rc_t log_open_default_();
 
-    uint count_module_ctx_index_(int type, uint index) noexcept;
+    rc_t init_modules_();
+
+    uint count_module_ctx_index_(int type, uint index) const noexcept;
 
     std::vector<MConfPtr> conf_ctxs_;
 

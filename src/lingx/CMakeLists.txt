@@ -6,7 +6,6 @@ add_compile_options(-Wall -Wextra -Wpointer-arith)
 
 include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 
-target_link_libraries(lingx PRIVATE lingx_core lingx_event)
+target_link_libraries(lingx PRIVATE lingx_core)
 
 add_subdirectory(core)
-add_subdirectory(event)

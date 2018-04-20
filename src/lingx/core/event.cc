@@ -1,4 +1,4 @@
-#include <lingx/event/event.h>
+#include <lingx/core/event.h>
 #include <lingx/core/module.h>
 #include <lingx/core/conf_file.h>
 #include <lingx/core/cycle.h>
@@ -12,12 +12,12 @@ const uint DEFAULT_CONNECTIONS = 512;
 
 const char* Events_block_(const Conf& cf, const Command& cmd, MConfPtr& conf);
 
-const char* Events_init_conf_(const CyclePtr& cycle, const MConfPtr& conf);
+const char* Events_init_conf_(Cycle* cycle, MConf* conf);
 
-MConfPtr Event_core_create_conf_(const CyclePtr& cycle);
-const char* Event_core_init_conf_(const CyclePtr& cycle, const MConfPtr& conf);
+MConfPtr Event_core_create_conf_(Cycle* cycle);
+const char* Event_core_init_conf_(Cycle* cycle, MConf* conf);
 
-rc_t Event_core_module_init_(const CyclePtr& cycle);
+rc_t Event_core_module_init_(Cycle* cycle);
 
 std::vector<Command> Events_commands_ {
     Command {
@@ -52,6 +52,11 @@ EventModuleCtx Event_core_module_ctx_ {
 };
 
 }
+
+/* TODO: move it into epoll module */
+bool Use_epoll_rdhup = false;
+
+int Event_flags = 0;
 
 Module Events_module {
     "lnx_events_module",
@@ -113,7 +118,7 @@ const char* Events_block_(const Conf& cf, const Command&, MConfPtr& conf)
         const EventModuleCtx& ctx = static_cast<const EventModuleCtx&>(mod.ctx());
 
         if (ctx.init_conf) {
-            rv = ctx.init_conf(cf.cycle(), econfs->ctxs[mod.ctx_index()]);
+            rv = ctx.init_conf(cf.cycle(), econfs->ctxs[mod.ctx_index()].get());
             if (rv != CONF_OK)
                 return rv;
         }
@@ -122,7 +127,7 @@ const char* Events_block_(const Conf& cf, const Command&, MConfPtr& conf)
     return CONF_OK;
 }
 
-const char* Events_init_conf_(const CyclePtr& cycle, const MConfPtr&)
+const char* Events_init_conf_(Cycle* cycle, MConf*)
 {
     if (Get_module_conf(MConfs, cycle, Events_module) == nullptr) {
         Log_error(cycle->log(), Log::EMERG, 0,
@@ -133,7 +138,7 @@ const char* Events_init_conf_(const CyclePtr& cycle, const MConfPtr&)
     return CONF_OK;
 }
 
-MConfPtr Event_core_create_conf_(const CyclePtr&)
+MConfPtr Event_core_create_conf_(Cycle*)
 {
     std::shared_ptr<EventConf> ecf = std::make_shared<EventConf>();
 
@@ -143,9 +148,9 @@ MConfPtr Event_core_create_conf_(const CyclePtr&)
     return ecf;
 }
 
-const char* Event_core_init_conf_(const CyclePtr& cycle, const MConfPtr& conf)
+const char* Event_core_init_conf_(Cycle* cycle, MConf* conf)
 {
-    std::shared_ptr<EventConf> ecf = std::static_pointer_cast<EventConf>(conf);
+    EventConf* ecf = static_cast<EventConf*>(conf);
 
     Conf_init_value(ecf->connections, DEFAULT_CONNECTIONS);
     cycle->set_connection_n(ecf->connections);
@@ -155,7 +160,7 @@ const char* Event_core_init_conf_(const CyclePtr& cycle, const MConfPtr& conf)
     return CONF_OK;
 }
 
-rc_t Event_core_module_init_(const CyclePtr& cycle)
+rc_t Event_core_module_init_(Cycle* cycle)
 {
     std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
     if (!ccf->master)

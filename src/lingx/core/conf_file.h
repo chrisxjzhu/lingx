@@ -73,14 +73,11 @@ struct ConfFile {
 class Conf {
 public:
     explicit Conf(const CyclePtr& cycle) noexcept
-        : cycle_(cycle)
+        : cycle_(cycle.get())
     { }
 
-    const CyclePtr& cycle() const noexcept
+    Cycle* cycle() const noexcept
     { return cycle_; }
-
-    void set_log(const LogPtr& log) noexcept
-    { log_ = log; }
 
     void set_ctxs(std::vector<MConfPtr>* ctxs) noexcept
     { ctxs_ = ctxs; }
@@ -90,6 +87,9 @@ public:
 
     void set_cmd_type(int type) noexcept
     { cmd_type_ = type; }
+
+    void set_log(const LogPtr& log) noexcept
+    { log_ = log.get(); }
 
     const char* param() noexcept;
     const char* parse(const std::string& filename) noexcept;
@@ -103,13 +103,14 @@ private:
     rc_t handle_(int last) noexcept;
 
     std::vector<std::string> args_;
-    CyclePtr  cycle_;
+    Cycle* cycle_ = nullptr;
     ConfFile* conf_file_ = nullptr;
-    LogPtr log_;
 
     std::vector<MConfPtr>* ctxs_ = nullptr;
     int module_type_ = 0;
     int cmd_type_ = 0;
+
+    Log* log_ = nullptr;
 };
 
 template <typename T>

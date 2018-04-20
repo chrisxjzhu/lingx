@@ -16,7 +16,7 @@ class Module {
     friend void Preinit_modules();
 
 public:
-    typedef std::function<rc_t(const CyclePtr&)> init_module_t;
+    typedef std::function<rc_t(Cycle*)> init_module_t;
 
     Module(const Module&) = delete;
     Module& operator=(const Module&) = delete;
@@ -61,8 +61,8 @@ public:
 };
 
 struct CoreModuleCtx : ModuleCtx {
-    typedef std::function<MConfPtr(const CyclePtr&)> create_conf_t;
-    typedef std::function<const char*(const CyclePtr&, const MConfPtr&)> init_conf_t;
+    typedef std::function<MConfPtr(Cycle*)> create_conf_t;
+    typedef std::function<const char*(Cycle*, MConf*)> init_conf_t;
 
     CoreModuleCtx(const char* name,
                   const create_conf_t& create_conf,

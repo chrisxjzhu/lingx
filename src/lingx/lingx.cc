@@ -7,6 +7,7 @@
 #include <lingx/core/cycle.h>
 #include <lingx/core/module.h>
 #include <lingx/core/conf_file.h>
+#include <lingx/core/os.h>  // Os_init()
 #include <lingx/core/process.h>  // Init_signals()
 #include <lingx/core/process_cycle.h>
 #include <lingx/core/daemon.h>   // Daemonize()
@@ -20,8 +21,8 @@ void Show_version_info_() noexcept;
 rc_t Get_options_(int argc, const char *const argv[]) noexcept;
 rc_t Process_options_(const CyclePtr& cycle);
 
-MConfPtr Core_module_create_conf_(const CyclePtr& cycle);
-const char* Core_module_init_conf_(const CyclePtr& cycle, const MConfPtr& conf);
+MConfPtr Core_module_create_conf_(Cycle* cycle);
+const char* Core_module_init_conf_(Cycle* cycle, MConf* conf);
 
 bool Opt_show_help_      = false;
 bool Opt_show_version_   = false;
@@ -92,6 +93,9 @@ int main(int argc, const char* const argv[])
     if (Process_options_(init_cycle) != OK)
         return 1;
 
+    if (Os_init(log) != OK)
+        return 1;
+
     Preinit_modules();
 
     CyclePtr cycle = Init_new_cycle(init_cycle);
@@ -109,6 +113,8 @@ int main(int argc, const char* const argv[])
 
     if (Opt_signal_[0])
         return Signal_process(cycle, Opt_signal_);
+
+    Os_status(cycle->log());
 
     Cur_cycle = cycle;
 
@@ -309,7 +315,7 @@ rc_t Process_options_(const CyclePtr& cycle)
     return OK;
 }
 
-MConfPtr Core_module_create_conf_(const CyclePtr&)
+MConfPtr Core_module_create_conf_(Cycle*)
 {
     std::shared_ptr<CoreConf> ccf = std::make_shared<CoreConf>();
 
@@ -319,9 +325,9 @@ MConfPtr Core_module_create_conf_(const CyclePtr&)
     return ccf;
 }
 
-const char* Core_module_init_conf_(const CyclePtr& cycle, const MConfPtr& conf)
+const char* Core_module_init_conf_(Cycle* cycle, MConf* conf)
 {
-    std::shared_ptr<CoreConf> ccf = std::static_pointer_cast<CoreConf>(conf);
+    CoreConf* ccf = static_cast<CoreConf*>(conf);
 
     Conf_init_value(ccf->daemon, ON);
     Conf_init_value(ccf->master, ON);
