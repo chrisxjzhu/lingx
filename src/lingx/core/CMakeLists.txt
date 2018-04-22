@@ -5,6 +5,8 @@ add_library(lingx_core
             daemon.cc
             error.cc
             event.cc
+            event_poll_module.cc
+            event_posted.cc
             file.cc
             linux_init.cc
             log.cc
@@ -15,6 +17,7 @@ add_library(lingx_core
             posix_init.cc
             process.cc
             process_cycle.cc
+            queue.cc
             recv.cc
             send.cc
             strings.cc

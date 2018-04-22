@@ -48,7 +48,8 @@ EventModuleCtx Event_core_module_ctx_ {
     "event_core",
     Event_core_create_conf_,
     Event_core_init_conf_,
-    { }
+    { nullptr, nullptr, nullptr, nullptr, nullptr,
+      nullptr, nullptr, nullptr, nullptr, nullptr}
 };
 
 }
@@ -56,7 +57,9 @@ EventModuleCtx Event_core_module_ctx_ {
 /* TODO: move it into epoll module */
 bool Use_epoll_rdhup = false;
 
+sig_atomic_t Event_timer_alarm = 0;
 int Event_flags = 0;
+EventActions  Event_actions;
 
 Module Events_module {
     "lnx_events_module",
@@ -129,7 +132,7 @@ const char* Events_block_(const Conf& cf, const Command&, MConfPtr& conf)
 
 const char* Events_init_conf_(Cycle* cycle, MConf*)
 {
-    if (Get_module_conf(MConfs, cycle, Events_module) == nullptr) {
+    if (Get_conf(MConfs, cycle, Events_module) == nullptr) {
         Log_error(cycle->log(), Log::EMERG, 0,
                   "no \"events\" section in configuration");
         return CONF_ERROR;
@@ -143,7 +146,9 @@ MConfPtr Event_core_create_conf_(Cycle*)
     std::shared_ptr<EventConf> ecf = std::make_shared<EventConf>();
 
     ecf->connections = UNSET;
+    ecf->use = UNSET;
     ecf->multi_accept = UNSET;
+    ecf->name = (const char*) UNSET;
 
     return ecf;
 }
@@ -152,8 +157,36 @@ const char* Event_core_init_conf_(Cycle* cycle, MConf* conf)
 {
     EventConf* ecf = static_cast<EventConf*>(conf);
 
+    const Module* module = nullptr;
+
+    /* TODO: select a default one */
+
+    if (module == nullptr) {
+        for (const Module& mod : cycle->modules()) {
+            if (mod.type() != EVENT_MODULE)
+                continue;
+
+            const EventModuleCtx& ctx = static_cast<const EventModuleCtx&>(mod.ctx());
+            if (ctx.name == Event_core_module_ctx_.name)
+                continue;
+
+            module = &mod;
+            break;
+        }
+    }
+
+    if (module == nullptr) {
+        Log_error(cycle->log(), Log::EMERG, 0, "no events module found");
+        return CONF_ERROR;
+    }
+
     Conf_init_value(ecf->connections, DEFAULT_CONNECTIONS);
     cycle->set_connection_n(ecf->connections);
+
+    Conf_init_value(ecf->use, module->ctx_index());
+
+    const EventModuleCtx& ctx = static_cast<const EventModuleCtx&>(module->ctx());
+    Conf_init_value(ecf->name, ctx.name.data());
 
     Conf_init_value(ecf->multi_accept, OFF);
 
@@ -162,7 +195,7 @@ const char* Event_core_init_conf_(Cycle* cycle, MConf* conf)
 
 rc_t Event_core_module_init_(Cycle* cycle)
 {
-    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
+    std::shared_ptr<CoreConf> ccf = Get_conf(CoreConf, cycle, Core_module);
     if (!ccf->master)
         return OK;
 

@@ -2,6 +2,7 @@
 #define _LINGX_CORE_CONNECTION
 
 #include <lingx/core/common.h>
+#include <lingx/core/os_io.h>
 
 namespace lnx {
 

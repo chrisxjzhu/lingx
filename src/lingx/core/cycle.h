@@ -7,8 +7,6 @@
 
 namespace lnx {
 
-class Module;
-
 class Cycle {
     friend CyclePtr Init_new_cycle(const CyclePtr& old_cycle);
 
@@ -24,11 +22,20 @@ public:
     std::vector<MConfPtr>& conf_ctxs() noexcept
     { return conf_ctxs_; }
 
+    const std::vector<Connection*>& files() const noexcept
+    { return files_; }
+
     const std::vector<std::reference_wrapper<Module>>& modules() const noexcept
     { return modules_; }
 
     const LogPtr& log() const noexcept
     { return log_; }
+
+    const CyclePtr& old_cycle() const noexcept
+    { return old_cycle_; }
+
+    uint connection_n() const noexcept
+    { return connection_n_; }
 
     const std::string& prefix() const noexcept
     { return prefix_; }
@@ -68,6 +75,8 @@ private:
 
     LogPtr new_log_;
     LogPtr log_;
+
+    std::vector<Connection*> files_;
 
     std::vector<std::reference_wrapper<Module>> modules_;
 

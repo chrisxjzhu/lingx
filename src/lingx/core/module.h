@@ -82,7 +82,7 @@ void Preinit_modules();
 
 }
 
-#define Get_module_conf(type, cycle, module)                                 \
+#define Get_conf(type, cycle, module)                                        \
     std::static_pointer_cast<type>((cycle)->conf_ctxs()[(module).index()])
 
 #endif

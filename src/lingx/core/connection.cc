@@ -3,6 +3,8 @@
 
 namespace lnx {
 
+Os_io_t Io;
+
 int Connection_log_error(const Connection* c, int err, const char* text) noexcept
 {
     if (err == ECONNRESET && c->log_error == ERROR_IGNORE_ECONNRESET)

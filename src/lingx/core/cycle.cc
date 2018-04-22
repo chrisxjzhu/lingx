@@ -264,7 +264,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     if (Process_type == PROCESS_SIGNALLER)
         return cycle;
 
-    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
+    std::shared_ptr<CoreConf> ccf = Get_conf(CoreConf, cycle, Core_module);
 
     if (Opt_test_config) {
         if (Create_pidfile(ccf->pid_path, log) != OK)
@@ -274,7 +274,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
          * we do not create the pid file in the first Init_new_cycle() call
          * because we need to write the demonized process pid
          */
-        auto old_ccf = Get_module_conf(CoreConf, old_cycle, Core_module);
+        std::shared_ptr<CoreConf> old_ccf = Get_conf(CoreConf, old_cycle, Core_module);
 
         if (ccf->pid_path != old_ccf->pid_path) {
             /* new pid file name */
@@ -314,7 +314,7 @@ int Signal_process(const CyclePtr& cycle, const char* sig) noexcept
 {
     Log_error(cycle->log(), Log::NOTICE, 0, "signal process started");
 
-    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
+    std::shared_ptr<CoreConf> ccf = Get_conf(CoreConf, cycle, Core_module);
 
     File file;
 
@@ -386,7 +386,7 @@ rc_t Create_pidfile(const std::string& path, const LogPtr& log) noexcept
 
 void Delete_pidfile(const CyclePtr& cycle) noexcept
 {
-    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
+    std::shared_ptr<CoreConf> ccf = Get_conf(CoreConf, cycle, Core_module);
     const char* path = ccf->pid_path.c_str();
 
     if (::unlink(path) == -1)

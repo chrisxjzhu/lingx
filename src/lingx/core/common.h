@@ -41,6 +41,8 @@ struct MConfs : MConf {
 
 struct ModuleCtx {};
 
+class Module;
+
 class OpenFile;
 using OpenFilePtr = std::shared_ptr<OpenFile>;
 

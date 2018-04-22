@@ -118,7 +118,7 @@ int main(int argc, const char* const argv[])
 
     Cur_cycle = cycle;
 
-    std::shared_ptr<CoreConf> ccf = Get_module_conf(CoreConf, cycle, Core_module);
+    std::shared_ptr<CoreConf> ccf = Get_conf(CoreConf, cycle, Core_module);
 
     if (ccf->master && Process_type == PROCESS_SINGLE)
         Process_type = PROCESS_MASTER;
