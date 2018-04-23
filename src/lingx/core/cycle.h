@@ -28,6 +28,9 @@ public:
     const std::vector<std::reference_wrapper<Module>>& modules() const noexcept
     { return modules_; }
 
+    const LogPtr& new_log() const noexcept
+    { return new_log_; }
+
     const LogPtr& log() const noexcept
     { return log_; }
 
@@ -46,8 +49,14 @@ public:
     const std::string& conf_param() const noexcept
     { return conf_param_; }
 
+    void set_new_log(const LogPtr& log) noexcept
+    { new_log_ = log; }
+
     void set_log(const LogPtr& log) noexcept
     { log_ = log; }
+
+    void set_log_use_stderr(bool use) noexcept
+    { log_use_stderr_ = use; }
 
     void set_connection_n(uint conn_n) noexcept
     { connection_n_ = conn_n; }
@@ -75,6 +84,8 @@ private:
 
     LogPtr new_log_;
     LogPtr log_;
+
+    bool log_use_stderr_ = false;
 
     std::vector<Connection*> files_;
 

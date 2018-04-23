@@ -65,10 +65,8 @@ OpenFilePtr Cycle::log_open_file(const std::string& name)
 
 rc_t Cycle::log_redirect_stderr() noexcept
 {
-    /*
-     * if (log_use_stderr_)
-     *    return OK;
-     */
+     if (log_use_stderr_)
+        return OK;
 
     int fd = log_->file()->fd();
     if (fd != STDERR_FILENO) {

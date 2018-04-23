@@ -1,4 +1,7 @@
 #include <lingx/core/log.h>
+#include <lingx/core/cycle.h>
+#include <lingx/core/module.h>
+#include <lingx/core/conf_file.h>
 #include <lingx/core/open_file.h>
 #include <lingx/core/path.h>     // is_relative()
 #include <lingx/core/error.h>    // Strerrno()
@@ -11,8 +14,10 @@
 #include <fcntl.h>               // open()
 
 namespace lnx {
+namespace {
 
-bool Use_stderr = true;
+const char* Error_log_(const Conf& cf, const Command& cmd, MConfPtr& conf);
+const char* Log_set_levels_(const Conf& cf, const LogPtr& log);
 
 const std::string_view Log_levels_[] = {
     "",
@@ -25,6 +30,33 @@ const std::string_view Log_levels_[] = {
     "info",
     "debug"
 };
+
+std::vector<Command> Errlog_commands_ {
+    Command {
+        "error_log",
+         MAIN_CONF|CONF_1MORE,
+         Error_log_,
+         0
+    }
+};
+
+CoreModuleCtx Errlog_module_ctx_ {
+    "errlog",
+    nullptr,
+    nullptr
+};
+
+}
+
+Module Errlog_module {
+    "lnx_errlog_module",
+    Errlog_module_ctx_,
+    Errlog_commands_,
+    CORE_MODULE,
+    nullptr
+};
+
+bool Use_stderr = true;
 
 LogPtr Init_new_log(const char* prefix)
 {
@@ -142,6 +174,43 @@ LogPtr Get_file_log(const LogPtr& head) noexcept
     return nullptr;
 }
 
+const char* Log_set_log(const Conf& cf, LogPtr& head)
+{
+    LogPtr  new_log;
+
+    if (head && head->level() == Log::STDERR)
+        new_log = head;
+    else {
+        new_log = std::make_shared<Log>();
+
+        if (!head)
+            head = new_log;
+    }
+
+    const std::vector<std::string>& values = cf.args();
+
+    if (values[1] == "stderr") {
+        cf.cycle()->set_log_use_stderr(true);
+        new_log->set_file(cf.cycle()->log_open_file(""));
+    } else if (values[1].substr(0, 7) == "memory:") {
+        cf.log_error(Log::EMERG, "lingx was built without debug support");
+        return CONF_ERROR;
+    } else if (values[1].substr(0, 7) == "syslog:") {
+        cf.log_error(Log::EMERG, "not yet support");
+        return CONF_ERROR;
+    } else {
+        new_log->set_file(cf.cycle()->log_open_file(values[1]));
+    }
+
+    if (Log_set_levels_(cf, new_log) != CONF_OK)
+        return CONF_ERROR;
+
+    if (head != new_log)
+        Log_insert(head, new_log);
+
+    return CONF_OK;
+}
+
 void Log_insert(LogPtr log, const LogPtr& new_log) noexcept
 {
     if (new_log->level_ > log->level_) {
@@ -161,6 +230,58 @@ void Log_insert(LogPtr log, const LogPtr& new_log) noexcept
     }
 
     log->next_ = new_log;
+}
+
+namespace {
+
+const char* Error_log_(const Conf& cf, const Command&, MConfPtr& /*conf*/)
+{
+    LogPtr dummy = cf.cycle()->new_log();
+
+    const char* rv = Log_set_log(cf, dummy);
+
+    cf.cycle()->set_new_log(dummy);
+
+    return rv;
+}
+
+const char* Log_set_levels_(const Conf& cf, const LogPtr& log)
+{
+    const std::vector<std::string>& values = cf.args();
+
+    if (values.size() == 2) {
+        log->set_level(Log::ERROR);
+        return CONF_OK;
+    }
+
+    for (uint i = 2; i < values.size(); ++i) {
+        bool found = false;
+
+        for (uint n = 1; n <= Log::DEBUG; ++n) {
+            if (values[i] == Log_levels_[n]) {
+
+                if (log->level() != Log::STDERR) {
+                    cf.log_error(Log::EMERG, "duplicate log level \"%s\"",
+                                 values[i].c_str());
+                    return CONF_ERROR;
+                }
+
+                log->set_level(Log::Level(n));
+
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            cf.log_error(Log::EMERG, "invalid log level \"%s\"", values[i].c_str());
+            return CONF_ERROR;
+        }
+    }
+
+    return CONF_OK;
+}
+
 }
 
 }

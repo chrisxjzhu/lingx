@@ -79,6 +79,9 @@ public:
     Cycle* cycle() const noexcept
     { return cycle_; }
 
+    const std::vector<std::string>& args() const noexcept
+    { return args_; }
+
     void set_ctxs(std::vector<MConfPtr>* ctxs) noexcept
     { ctxs_ = ctxs; }
 

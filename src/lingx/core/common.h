@@ -32,6 +32,8 @@ using LogPtr = std::shared_ptr<Log>;
 class Cycle;
 using CyclePtr = std::shared_ptr<Cycle>;
 
+class Conf;
+
 struct MConf {};
 using  MConfPtr = std::shared_ptr<MConf>;
 

@@ -60,6 +60,8 @@ LogPtr Init_new_log(const char* prefix);
 
 LogPtr Get_file_log(const LogPtr& head) noexcept;
 
+const char* Log_set_log(const Conf& cf, LogPtr& head);
+
 void Log_insert(LogPtr log, const LogPtr& new_log) noexcept;
 
 extern bool Use_stderr;
