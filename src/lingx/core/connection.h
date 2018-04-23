@@ -24,7 +24,7 @@ struct Connection {
 
     off_t sent;
 
-    Log* log;
+    const Log* log;
 
     unsigned log_error:3;
 };

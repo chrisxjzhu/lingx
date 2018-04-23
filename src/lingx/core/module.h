@@ -5,8 +5,6 @@
 
 namespace lnx {
 
-struct Command;
-
 enum {
     CORE_MODULE  = 0x45524F43, /* "CORE" */
     EVENT_MODULE = 0x544E5645  /* "EVNT" */

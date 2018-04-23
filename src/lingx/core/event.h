@@ -47,7 +47,7 @@ struct Event {
     Event_handler_pt handler;
 
     uint  index;
-    Log*  log;
+    const Log* log;
 
     /* the posted queue */
     Queue  queue;

@@ -6,10 +6,10 @@
 
 namespace lnx {
 
-rc_t Os_init(const LogPtr& log) noexcept;
-void Os_status(const LogPtr& log) noexcept;
-rc_t Os_specific_init(const LogPtr& log) noexcept;
-void Os_specific_status(const LogPtr& log) noexcept;
+rc_t Os_init(const Log* log) noexcept;
+void Os_status(const Log* log) noexcept;
+rc_t Os_specific_init(const Log* log) noexcept;
+void Os_specific_status(const Log* log) noexcept;
 
 }
 

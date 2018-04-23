@@ -7,7 +7,7 @@ namespace lnx {
 
 class Log {
     friend LogPtr Init_new_log(const char* prefix);
-    friend void Log_insert(LogPtr log, const LogPtr& new_log) noexcept;
+    friend void Log_insert(Log* log, const LogPtr& new_log) noexcept;
 
 public:
     enum Level {
@@ -45,7 +45,7 @@ public:
     void set_file(const OpenFilePtr& file) noexcept
     { file_ = file; }
 
-    void log(Level lvl, int err, const char* fmt, ...) noexcept;
+    void log(Level lvl, int err, const char* fmt, ...) const noexcept;
 
     static void Printf(int err, const char* fmt, ...) noexcept;
 
@@ -58,11 +58,13 @@ private:
 
 LogPtr Init_new_log(const char* prefix);
 
-LogPtr Get_file_log(const LogPtr& head) noexcept;
+const Log* Get_file_log(const Log* head) noexcept;
 
-const char* Log_set_log(const Conf& cf, LogPtr& head);
+const char* Error_log(const Conf& cf, const Command& cmd, MConfPtr& conf);
 
-void Log_insert(LogPtr log, const LogPtr& new_log) noexcept;
+const char* Log_set_log(const Conf& cf, Log** head);
+
+void Log_insert(Log* log, const LogPtr& new_log) noexcept;
 
 extern bool Use_stderr;
 

@@ -41,6 +41,8 @@ struct MConfs : MConf {
     std::vector<MConfPtr> ctxs;
 };
 
+struct Command;
+
 struct ModuleCtx {};
 
 class Module;

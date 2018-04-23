@@ -8,7 +8,7 @@
 
 namespace lnx {
 
-rc_t Daemonize(const LogPtr& log) noexcept
+rc_t Daemonize(const Log* log) noexcept
 {
     switch (::fork()) {
     case -1:

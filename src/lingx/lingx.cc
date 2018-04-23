@@ -88,12 +88,12 @@ int main(int argc, const char* const argv[])
     CyclePtr init_cycle = std::make_shared<Cycle>();
     Cur_cycle = init_cycle;
 
-    init_cycle->set_log(log);
+    init_cycle->set_log(log.get());
 
     if (Process_options_(init_cycle) != OK)
         return 1;
 
-    if (Os_init(log) != OK)
+    if (Os_init(log.get()) != OK)
         return 1;
 
     Preinit_modules();
@@ -310,7 +310,7 @@ rc_t Process_options_(const CyclePtr& cycle)
     cycle->set_conf_param(Opt_conf_param_);
 
     if (Opt_test_config)
-        cycle->log()->set_level(Log::Level::INFO);
+        const_cast<Log*>(cycle->log())->set_level(Log::INFO);
 
     return OK;
 }

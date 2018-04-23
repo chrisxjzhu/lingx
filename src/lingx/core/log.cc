@@ -16,8 +16,7 @@
 namespace lnx {
 namespace {
 
-const char* Error_log_(const Conf& cf, const Command& cmd, MConfPtr& conf);
-const char* Log_set_levels_(const Conf& cf, const LogPtr& log);
+const char* Log_set_levels_(const Conf& cf, Log* log) noexcept;
 
 const std::string_view Log_levels_[] = {
     "",
@@ -35,7 +34,7 @@ std::vector<Command> Errlog_commands_ {
     Command {
         "error_log",
          MAIN_CONF|CONF_1MORE,
-         Error_log_,
+         Error_log,
          0
     }
 };
@@ -91,7 +90,7 @@ LogPtr Init_new_log(const char* prefix)
     return log;
 }
 
-void Log::log(Level lvl, int err, const char* fmt, ...) noexcept
+void Log::log(Level lvl, int err, const char* fmt, ...) const noexcept
 {
     char errstr[MAX_ERROR_STR];
     const char* const last = errstr + sizeof(errstr) - sizeof('\n');
@@ -118,7 +117,7 @@ void Log::log(Level lvl, int err, const char* fmt, ...) noexcept
 
     bool wrote_stderr = false;
 
-    for (Log* plog = this; plog; plog = plog->next_.get()) {
+    for (const Log* plog = this; plog; plog = plog->next_.get()) {
 
         if (plog->level_ < lvl)
             break;
@@ -165,26 +164,35 @@ void Log::Printf(int err, const char* fmt, ...) noexcept
     ::write(STDERR_FILENO, errstr, p - errstr);
 }
 
-LogPtr Get_file_log(const LogPtr& head) noexcept
+const Log* Get_file_log(const Log* head) noexcept
 {
-    for (auto log = head; log; log = log->next())
+    for (auto log = head; log; log = log->next().get())
         if (log->file())
             return log;
 
     return nullptr;
 }
 
-const char* Log_set_log(const Conf& cf, LogPtr& head)
+const char* Error_log(const Conf& cf, const Command&, MConfPtr& /*conf*/)
 {
-    LogPtr  new_log;
+    Log* dummy = &cf.cycle()->new_log_;
 
-    if (head && head->level() == Log::STDERR)
-        new_log = head;
+    return Log_set_log(cf, &dummy);
+}
+
+const char* Log_set_log(const Conf& cf, Log** head)
+{
+    LogPtr  new_logp;
+    Log*    new_log;
+
+    if (*head && (*head)->level() == Log::STDERR)
+        new_log = *head;
     else {
-        new_log = std::make_shared<Log>();
+        new_logp = std::make_shared<Log>();
+        new_log = new_logp.get();
 
-        if (!head)
-            head = new_log;
+        if (*head == nullptr)
+            *head = new_log;
     }
 
     const std::vector<std::string>& values = cf.args();
@@ -205,13 +213,13 @@ const char* Log_set_log(const Conf& cf, LogPtr& head)
     if (Log_set_levels_(cf, new_log) != CONF_OK)
         return CONF_ERROR;
 
-    if (head != new_log)
-        Log_insert(head, new_log);
+    if (*head != new_log)
+        Log_insert(*head, new_logp);
 
     return CONF_OK;
 }
 
-void Log_insert(LogPtr log, const LogPtr& new_log) noexcept
+void Log_insert(Log* log, const LogPtr& new_log) noexcept
 {
     if (new_log->level_ > log->level_) {
         std::swap(*new_log, *log);
@@ -226,7 +234,7 @@ void Log_insert(LogPtr log, const LogPtr& new_log) noexcept
             return;
         }
 
-        log = log->next_;
+        log = log->next_.get();
     }
 
     log->next_ = new_log;
@@ -234,18 +242,7 @@ void Log_insert(LogPtr log, const LogPtr& new_log) noexcept
 
 namespace {
 
-const char* Error_log_(const Conf& cf, const Command&, MConfPtr& /*conf*/)
-{
-    LogPtr dummy = cf.cycle()->new_log();
-
-    const char* rv = Log_set_log(cf, dummy);
-
-    cf.cycle()->set_new_log(dummy);
-
-    return rv;
-}
-
-const char* Log_set_levels_(const Conf& cf, const LogPtr& log)
+const char* Log_set_levels_(const Conf& cf, Log* log) noexcept
 {
     const std::vector<std::string>& values = cf.args();
 

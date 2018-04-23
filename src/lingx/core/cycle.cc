@@ -81,22 +81,26 @@ rc_t Cycle::log_redirect_stderr() noexcept
 
 rc_t Cycle::log_open_default_()
 {
-    if (Get_file_log(new_log_))
+    if (Get_file_log(&new_log_))
         return OK;
 
-    LogPtr log = std::make_shared<Log>();
+    LogPtr logp;
+    Log*   log;
 
-    if (!new_log_)
-        new_log_ = log;
+    if (new_log_.level() != Log::STDERR) {
+        /* there are some error logs, but no files */
+        logp = std::make_shared<Log>();
+        log = logp.get();
+    } else {
+        log = &new_log_;
+    }
 
     log->set_level(Log::ERROR);
 
     log->set_file(log_open_file(LNX_ERROR_LOG_PATH));
-    if (!log->file())
-        return ERROR;
 
-    if (log != new_log_)
-        Log_insert(new_log_, log);
+    if (log != &new_log_)
+        Log_insert(&new_log_, logp);
 
     return OK;
 }
@@ -199,7 +203,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 
     Time_update();
 
-    LogPtr log = old_cycle->log_;
+    const Log* log = old_cycle->log_;
 
     CyclePtr cycle = std::make_shared<Cycle>();
 
@@ -287,7 +291,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     if (cycle->log_open_default_() != OK)
         return nullptr;
 
-    cycle->log_ = cycle->new_log_;
+    cycle->log_ = &cycle->new_log_;
 
     /* commit the new cycle configuration */
 
@@ -349,7 +353,7 @@ int Signal_process(const CyclePtr& cycle, const char* sig) noexcept
     return Os_signal_process(cycle, sig, pid);
 }
 
-rc_t Create_pidfile(const std::string& path, const LogPtr& log) noexcept
+rc_t Create_pidfile(const std::string& path, const Log* log) noexcept
 {
     if (Process_type > PROCESS_MASTER)
         return OK;

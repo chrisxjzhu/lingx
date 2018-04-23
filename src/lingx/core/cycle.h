@@ -2,6 +2,7 @@
 #define _LINGX_CORE_CYCLE_H
 
 #include <lingx/core/common.h>
+#include <lingx/core/log.h>
 #include <lingx/core/open_file.h>
 #include <list>
 
@@ -9,6 +10,7 @@ namespace lnx {
 
 class Cycle {
     friend CyclePtr Init_new_cycle(const CyclePtr& old_cycle);
+    friend const char* Error_log(const Conf& cf, const Command&, MConfPtr&);
 
 public:
     Cycle(const Cycle&) = delete;
@@ -28,10 +30,7 @@ public:
     const std::vector<std::reference_wrapper<Module>>& modules() const noexcept
     { return modules_; }
 
-    const LogPtr& new_log() const noexcept
-    { return new_log_; }
-
-    const LogPtr& log() const noexcept
+    const Log* log() const noexcept
     { return log_; }
 
     const CyclePtr& old_cycle() const noexcept
@@ -49,10 +48,7 @@ public:
     const std::string& conf_param() const noexcept
     { return conf_param_; }
 
-    void set_new_log(const LogPtr& log) noexcept
-    { new_log_ = log; }
-
-    void set_log(const LogPtr& log) noexcept
+    void set_log(const Log* log) noexcept
     { log_ = log; }
 
     void set_log_use_stderr(bool use) noexcept
@@ -82,8 +78,8 @@ private:
 
     std::vector<MConfPtr> conf_ctxs_;
 
-    LogPtr new_log_;
-    LogPtr log_;
+    Log new_log_;
+    const Log* log_ = nullptr;
 
     bool log_use_stderr_ = false;
 
@@ -113,7 +109,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle);
 
 int Signal_process(const CyclePtr& cycle, const char* sig) noexcept;
 
-rc_t Create_pidfile(const std::string& path, const LogPtr& log) noexcept;
+rc_t Create_pidfile(const std::string& path, const Log* log) noexcept;
 void Delete_pidfile(const CyclePtr& cycle) noexcept;
 
 extern CyclePtr Cur_cycle;

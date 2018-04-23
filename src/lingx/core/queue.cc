@@ -40,9 +40,9 @@ void Queue_sort(Queue* queue, int (*cmp)(const Queue*, const Queue*)) noexcept
     if (Queue_head(queue) == Queue_last(queue))
         return;
 
-    Queue *q, *prev, *next;
+    Queue *prev, *next;
 
-    for (q = Queue_next(q); q != Queue_sentinel(queue); q = next) {
+    for (Queue* q = Queue_next(queue); q != Queue_sentinel(queue); q = next) {
 
         prev = Queue_prev(q);
         next = Queue_next(q);

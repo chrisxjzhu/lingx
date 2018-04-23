@@ -40,7 +40,7 @@ void Signal_handler_(int signo) noexcept
 
 }
 
-rc_t Init_signals(const LogPtr& log) noexcept
+rc_t Init_signals(const Log* log) noexcept
 {
     for (Signal_* sig = Signals_; sig->signo != 0; ++sig) {
         struct sigaction sa;

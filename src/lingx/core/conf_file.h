@@ -91,8 +91,8 @@ public:
     void set_cmd_type(int type) noexcept
     { cmd_type_ = type; }
 
-    void set_log(const LogPtr& log) noexcept
-    { log_ = log.get(); }
+    void set_log(const Log* log) noexcept
+    { log_ = log; }
 
     const char* param() noexcept;
     const char* parse(const std::string& filename) noexcept;
@@ -113,7 +113,7 @@ private:
     int module_type_ = 0;
     int cmd_type_ = 0;
 
-    Log* log_ = nullptr;
+    const Log* log_ = nullptr;
 };
 
 template <typename T>

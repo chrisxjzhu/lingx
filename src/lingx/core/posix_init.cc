@@ -11,7 +11,7 @@ Os_io_t Os_io = {
     0
 };
 
-rc_t Os_init(const LogPtr& log) noexcept
+rc_t Os_init(const Log* log) noexcept
 {
     if (Os_specific_init(log) != OK)
         return ERROR;
@@ -21,7 +21,7 @@ rc_t Os_init(const LogPtr& log) noexcept
     return OK;
 }
 
-void Os_status(const LogPtr& log) noexcept
+void Os_status(const Log* log) noexcept
 {
     Log_error(log, Log::NOTICE, 0, LINGX_VER);
 

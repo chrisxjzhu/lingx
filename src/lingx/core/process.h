@@ -5,7 +5,7 @@
 
 namespace lnx {
 
-rc_t Init_signals(const LogPtr& log) noexcept;
+rc_t Init_signals(const Log* log) noexcept;
 
 int Os_signal_process(const CyclePtr& cycle, const char* name, pid_t pid) noexcept;
 

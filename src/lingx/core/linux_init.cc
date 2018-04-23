@@ -17,7 +17,7 @@ Os_io_t Linux_io_ = {
 
 }
 
-rc_t Os_specific_init(const LogPtr& log) noexcept
+rc_t Os_specific_init(const Log* log) noexcept
 {
     struct utsname u;
 
@@ -34,7 +34,7 @@ rc_t Os_specific_init(const LogPtr& log) noexcept
     return OK;
 }
 
-void Os_specific_status(const LogPtr& log) noexcept
+void Os_specific_status(const Log* log) noexcept
 {
     Log_error(log, Log::NOTICE, 0, "OS: %s %s",
               Linux_kern_ostype_, Linux_kern_osrelease_);
