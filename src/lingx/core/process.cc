@@ -1,8 +1,9 @@
 #include <lingx/core/process.h>
+#include <lingx/core/process_cycle.h>
 #include <lingx/core/times.h>
 #include <lingx/core/cycle.h>
 #include <lingx/core/log.h>
-#include <signal.h>
+#include <csignal>
 
 namespace lnx {
 namespace {
@@ -19,6 +20,7 @@ void Signal_handler_(int signo) noexcept;
 Signal_ Signals_[] = {
     { SIGTERM, "SIGTERM", "stop", Signal_handler_},
     { SIGQUIT, "SIGQUIT", "quit", Signal_handler_},
+    { SIGINT,  "SIGINT",   "",    Signal_handler_},
     { 0, nullptr, "", nullptr }
 };
 
@@ -33,6 +35,27 @@ void Signal_handler_(int signo) noexcept
     Time_sigsafe_update();
 
     const char* action = "";
+
+    switch (Process_type) {
+    case PROCESS_MASTER:
+    case PROCESS_SINGLE:
+        switch (signo) {
+        case SIGQUIT:
+            Quit = true;
+            action = ", shutting down";
+            break;
+
+        case SIGTERM:
+        case SIGINT:
+            Terminate = true;
+            action = ", exiting";
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
 
     Log_error(Cur_cycle->log(), Log::NOTICE, 0,
               "signal %d (%s) received%s", signo, sig->signame, action);

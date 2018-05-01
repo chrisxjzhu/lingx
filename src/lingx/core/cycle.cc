@@ -4,6 +4,8 @@
 #include <lingx/core/file.h>
 #include <lingx/core/module.h>
 #include <lingx/core/conf_file.h>
+#include <lingx/core/connection.h>
+#include <lingx/core/event.h>
 #include <lingx/core/process.h>  // Os_signal_process()
 #include <lingx/core/process_cycle.h>
 #include <lingx/core/log.h>
@@ -19,6 +21,41 @@ CyclePtr Cur_cycle = nullptr;
 
 bool Opt_test_config = false;
 bool Opt_quiet_mode  = false;
+
+/* for initialize std::vector<Connection> and std::vector<Event> */
+Cycle::Cycle() = default;
+Cycle::~Cycle() = default;
+
+void Cycle::init_connections_events()
+{
+    connections_.resize(connection_n_);
+
+    read_events_.resize(connection_n_);
+    for (auto& r : read_events_) {
+        r.closed = 1;
+        r.instance = 1;
+    }
+
+    write_events_.resize(connection_n_);
+    for (auto& w : write_events_) {
+        w.closed = 1;
+    }
+
+    Connection* c = connections_.data();
+    void* next = nullptr;
+
+    for (uint i = connection_n_; i; next = &c[i]) {
+        --i;
+
+        c[i].data = next;
+        c[i].read = &read_events_[i];
+        c[i].write = &write_events_[i];
+        c[i].fd = -1;
+    }
+
+    free_connections_ = (Connection*) next;
+    free_connection_n_ = connection_n_;
+}
 
 void Cycle::set_prefix(const char* prefix)
 {

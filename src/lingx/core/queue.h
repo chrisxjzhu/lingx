@@ -76,7 +76,7 @@ struct Queue {
 
 
 #define Queue_data(q, type, link)                                             \
-    (type *) ((u_char *) q - offsetof(type, link))
+    (type *) ((char *) q - offsetof(type, link))
 
 
 Queue* Queue_middle(Queue* queue) noexcept;

@@ -1,9 +1,13 @@
 #include <lingx/core/event.h>
+#include <lingx/core/event_timer.h>
+#include <lingx/core/event_posted.h>
+#include <lingx/core/times.h>  // Current_msec
 #include <lingx/core/module.h>
 #include <lingx/core/conf_file.h>
 #include <lingx/core/cycle.h>
 #include <lingx/core/log.h>
 #include <cstddef>
+#include <sys/resource.h>
 
 namespace lnx {
 namespace {
@@ -18,6 +22,7 @@ MConfPtr Event_core_create_conf_(Cycle* cycle);
 const char* Event_core_init_conf_(Cycle* cycle, MConf* conf);
 
 rc_t Event_core_module_init_(Cycle* cycle);
+rc_t Event_core_process_init_(Cycle* cycle);
 
 std::vector<Command> Events_commands_ {
     Command {
@@ -57,7 +62,7 @@ EventModuleCtx Event_core_module_ctx_ {
 /* TODO: move it into epoll module */
 bool Use_epoll_rdhup = false;
 
-sig_atomic_t Event_timer_alarm = 0;
+bool Event_timer_alarm = false;
 int Event_flags = 0;
 EventActions  Event_actions;
 
@@ -66,6 +71,7 @@ Module Events_module {
     Events_module_ctx_,
     Events_commands_,
     CORE_MODULE,
+    nullptr,
     nullptr
 };
 
@@ -74,8 +80,31 @@ Module Event_core_module {
     Event_core_module_ctx_,
     Event_core_commands_,
     EVENT_MODULE,
-    Event_core_module_init_
+    Event_core_module_init_,
+    Event_core_process_init_
 };
+
+void Process_events_and_timers(const CyclePtr& cycle)
+{
+    msec_t timer = Event_find_timer();
+
+    int flags = UPDATE_TIME;
+
+    msec_t delta = Current_msec;
+
+    Event_actions.process_events(cycle.get(), timer, flags);
+
+    delta = Current_msec - delta;
+
+    Log_error(cycle->log(), Log::DEBUG, 0, "timer delta: %lu", delta);
+
+    Event_process_posted(cycle, &Posted_accept_events);
+
+    if (delta)
+        Event_expire_timers();
+
+    Event_process_posted(cycle, &Posted_events);
+}
 
 namespace {
 
@@ -198,6 +227,47 @@ rc_t Event_core_module_init_(Cycle* cycle)
     std::shared_ptr<CoreConf> ccf = Get_conf(CoreConf, cycle, Core_module);
     if (!ccf->master)
         return OK;
+
+    return OK;
+}
+
+rc_t Event_core_process_init_(Cycle* cycle)
+{
+    /* TODO: to be complete */
+
+    Queue_init(&Posted_accept_events);
+    Queue_init(&Posted_events);
+
+    // std::shared_ptr<CoreConf> ccf = Get_conf(CoreConf, cycle, Core_module);
+    std::shared_ptr<EventConf> ecf = Get_event_conf(EventConf, cycle, Event_core_module);
+
+    for (const Module& mod : cycle->modules()) {
+        if (mod.type() != EVENT_MODULE)
+            continue;
+
+        if (mod.ctx_index() != ecf->use)
+            continue;
+
+        const EventModuleCtx& ctx = static_cast<const EventModuleCtx&>(mod.ctx());
+        if (ctx.actions.init(cycle) != OK)
+            std::exit(2);
+
+        break;
+    }
+
+    if (Event_flags & USE_FD_EVENT) {
+        struct rlimit  rlmt;
+
+        if (::getrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
+            Log_error(cycle->log(), Log::ALERT, errno,
+                      "getrlimit(RLIMIT_NOFILE) failed");
+            return ERROR;
+        }
+
+        cycle->resize_files(rlmt.rlim_cur);
+    }
+
+    cycle->init_connections_events();
 
     return OK;
 }

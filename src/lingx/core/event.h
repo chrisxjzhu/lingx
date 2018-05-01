@@ -4,6 +4,7 @@
 #include <lingx/core/common.h>
 #include <lingx/core/os_io.h>
 #include <lingx/core/queue.h>
+#include <lingx/core/rbtree.h>
 #include <csignal>
 
 namespace lnx {
@@ -36,6 +37,9 @@ struct Event {
     unsigned  eof:1;
     unsigned  error:1;
 
+    unsigned  timedout:1;
+    unsigned  timer_set:1;
+
     unsigned  pending_eof:1;
 
     unsigned  posted:1;
@@ -48,6 +52,8 @@ struct Event {
 
     uint  index;
     const Log* log;
+
+    RBNode timer;
 
     /* the posted queue */
     Queue  queue;
@@ -65,9 +71,9 @@ struct EventActions {
 
     rc_t  (*notify)(Event_handler_pt handler);
 
-    rc_t  (*process_events)(Cycle* cycle, int timer, int flags);
+    rc_t  (*process_events)(Cycle* cycle, msec_t timer, int flags);
 
-    rc_t  (*init)(Cycle* cycle, int timer);
+    rc_t  (*init)(Cycle* cycle);
     void  (*done)(Cycle* cycle);
 };
 
@@ -111,7 +117,7 @@ enum {
     POST_EVENTS = 2
 };
 
-extern sig_atomic_t Event_timer_alarm;
+extern bool Event_timer_alarm;
 extern bool Use_epoll_rdhup;
 extern int Event_flags;
 
@@ -119,6 +125,8 @@ extern Module Events_module;
 extern Module Event_core_module;
 
 extern Os_io_t Io;
+
+void Process_events_and_timers(const CyclePtr& cycle);
 
 }
 

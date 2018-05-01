@@ -15,6 +15,7 @@ class Module {
 
 public:
     typedef std::function<rc_t(Cycle*)> init_module_t;
+    typedef std::function<rc_t(Cycle*)> init_process_t;
 
     Module(const Module&) = delete;
     Module& operator=(const Module&) = delete;
@@ -23,9 +24,11 @@ public:
            const ModuleCtx& ctx,
            const std::vector<Command>& commands,
            int type,
-           const init_module_t& init_module)
+           const init_module_t& init_module,
+           const init_process_t& init_process)
         : name_(name), ctx_(ctx), commands_(commands), type_(type),
-          init_module(init_module)
+          init_module(init_module),
+          init_process(init_process)
     { }
 
     uint index() const noexcept
@@ -56,6 +59,7 @@ private:
 
 public:
     const init_module_t init_module;
+    const init_process_t init_process;
 };
 
 struct CoreModuleCtx : ModuleCtx {

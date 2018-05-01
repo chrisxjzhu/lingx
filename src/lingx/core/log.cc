@@ -52,6 +52,7 @@ Module Errlog_module {
     Errlog_module_ctx_,
     Errlog_commands_,
     CORE_MODULE,
+    nullptr,
     nullptr
 };
 

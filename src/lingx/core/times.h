@@ -20,7 +20,7 @@ extern Time* Cached_time;
 extern std::string_view Cached_err_log_time;
 
 /* milliseconds elapsed since epoch, used in event timers */
-extern ulong Current_msec;
+extern msec_t Current_msec;
 
 }
 

@@ -22,7 +22,7 @@ std::mutex Mutex_;
 
 }
 
-ulong Current_msec = 0;
+msec_t Current_msec = 0;
 
 Time* Cached_time = nullptr;
 
@@ -48,7 +48,7 @@ void Time_update() noexcept
     long sec = tv.tv_sec;
     long msec = tv.tv_usec / 1000;
 
-    Current_msec = sec * 1000 + msec;
+    Current_msec = (msec_t) sec * 1000 + msec;
 
     Time* tp = &Cached_time_[Slot_];
 

@@ -60,6 +60,7 @@ Module Core_module {
     Core_module_ctx_,
     Core_commands_,
     CORE_MODULE,
+    nullptr,
     nullptr
 };
 

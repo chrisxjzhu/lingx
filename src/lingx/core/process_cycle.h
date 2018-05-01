@@ -20,6 +20,9 @@ extern ProcessType  Process_type;
 extern pid_t        Pid;
 extern bool         Daemonized;
 
+extern bool Terminate;
+extern bool Quit;
+
 }
 
 #endif

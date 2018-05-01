@@ -7,6 +7,7 @@ add_library(lingx_core
             event.cc
             event_poll_module.cc
             event_posted.cc
+            event_timer.cc
             file.cc
             linux_init.cc
             log.cc

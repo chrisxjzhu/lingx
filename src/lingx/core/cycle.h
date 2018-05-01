@@ -16,7 +16,7 @@ public:
     Cycle(const Cycle&) = delete;
     Cycle& operator=(const Cycle&) = delete;
 
-    Cycle() = default;
+    Cycle();
 
     bool is_init_cycle() const noexcept
     { return conf_ctxs_.empty(); }
@@ -54,8 +54,13 @@ public:
     void set_log_use_stderr(bool use) noexcept
     { log_use_stderr_ = use; }
 
+    void resize_files(size_t size)
+    { files_.resize(size); }
+
     void set_connection_n(uint conn_n) noexcept
     { connection_n_ = conn_n; }
+
+    void init_connections_events();
 
     void set_prefix(const char* prefix);
     void set_conf_file(const std::string& file);
@@ -68,6 +73,8 @@ public:
     rc_t log_redirect_stderr() noexcept;
 
     uint count_modules(int type) const noexcept;
+
+    ~Cycle();
 
 private:
     rc_t log_open_default_();
@@ -83,13 +90,21 @@ private:
 
     bool log_use_stderr_ = false;
 
-    std::vector<Connection*> files_;
-
     std::vector<std::reference_wrapper<Module>> modules_;
 
     std::list<OpenFilePtr> open_files_;
 
+    std::vector<Connection*> files_;
+
     uint connection_n_ = 0;
+
+    std::vector<Connection> connections_;
+    std::vector<Event> read_events_;
+    std::vector<Event> write_events_;
+
+    Connection* free_connections_ = nullptr;
+
+    uint free_connection_n_ = 0;
 
     CyclePtr old_cycle_;
 

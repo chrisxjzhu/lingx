@@ -1,4 +1,5 @@
 #include <lingx/core/event.h>
+#include <lingx/core/event_timer.h>  // TIMER_INFINITE
 #include <lingx/core/event_posted.h>
 #include <lingx/core/connection.h>
 #include <lingx/core/module.h>
@@ -17,11 +18,11 @@ uint nEvents_ = 0;
 
 const char* Poll_init_conf_(Cycle* cycle, MConf* conf);
 
-rc_t Poll_init_(Cycle* cycle, int /*timer*/);
-void Poll_done_(Cycle*);
+rc_t Poll_init_(Cycle* cycle);
+void Poll_done_(Cycle* cycle);
 rc_t Poll_add_event_(Event* ev, int event, int flags);
 rc_t Poll_del_event_(Event* ev, int event, int flags);
-rc_t Poll_process_events_(Cycle* cycle, int timer, int flags);
+rc_t Poll_process_events_(Cycle* cycle, msec_t timer, int flags);
 
 EventModuleCtx Poll_module_ctx_ {
     "poll",
@@ -48,6 +49,7 @@ Module Poll_module {
     Poll_module_ctx_,
     {},
     EVENT_MODULE,
+    nullptr,
     nullptr
 };
 
@@ -64,7 +66,7 @@ const char* Poll_init_conf_(Cycle* cycle, MConf*)
     return CONF_OK;
 }
 
-rc_t Poll_init_(Cycle* cycle, int /*timer*/)
+rc_t Poll_init_(Cycle* cycle)
 {
     if (Events_.empty())
         nEvents_ = 0;
@@ -170,11 +172,11 @@ rc_t Poll_del_event_(Event* ev, int event, int /*flags*/)
     return OK;
 }
 
-rc_t Poll_process_events_(Cycle* cycle, int timer, int flags)
+rc_t Poll_process_events_(Cycle* cycle, msec_t timer, int flags)
 {
-    Log_error(cycle->log(), Log::DEBUG, 0, "poll timer: %d", timer);
+    Log_error(cycle->log(), Log::DEBUG, 0, "poll timer: %d", (int) timer);
 
-    int ready = ::poll(Events_.data(), (int) nEvents_, timer);
+    int ready = ::poll(Events_.data(), (int) nEvents_, (int) timer);
 
     int err = (ready == -1) ? errno : 0;
 
@@ -188,7 +190,7 @@ rc_t Poll_process_events_(Cycle* cycle, int timer, int flags)
 
         if (err == EINTR) {
             if (Event_timer_alarm) {
-                Event_timer_alarm = 1;
+                Event_timer_alarm = false;
                 return OK;
             }
 
@@ -202,7 +204,7 @@ rc_t Poll_process_events_(Cycle* cycle, int timer, int flags)
     }
 
     if (ready == 0) {
-        if (timer != -1)
+        if (timer != TIMER_INFINITE)
             return OK;
 
         Log_error(cycle->log(), Log::ALERT, 0,
