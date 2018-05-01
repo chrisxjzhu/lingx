@@ -30,6 +30,16 @@ const std::string_view Log_levels_[] = {
     "debug"
 };
 
+const std::string_view Debug_levels_[] = {
+    "debug_core",
+    "debug_alloc",
+    "debug_mutex",
+    "debug_event",
+    "debug_http",
+    "debug_mail",
+    "debug_stream"
+};
+
 std::vector<Command> Errlog_commands_ {
     Command {
         "error_log",
@@ -57,39 +67,6 @@ Module Errlog_module {
 };
 
 bool Use_stderr = true;
-
-LogPtr Init_new_log(const char* prefix)
-{
-    LogPtr log = std::make_shared<Log>();
-    log->level_ = Log::NOTICE;
-
-    const char* name = LNX_ERROR_LOG_PATH;
-    size_t nlen = std::strlen(name);
-
-    if (nlen == 0) {
-        log->file_ = std::make_shared<OpenFile>(STDERR_FILENO, "");
-        return log;
-    }
-
-    std::string path;
-    if (Path(name).is_relative()) {
-        path = prefix;
-        Path::Tail_separator(path);
-    }
-    path += name;
-
-    int fd = ::open(path.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0644);
-    if (fd == -1) {
-        Log::Printf(errno, "[alert] could not open error log file: "
-                           "open() \"%s\" failed", path.c_str());
-        fd = STDERR_FILENO;
-        path.clear();
-    }
-
-    log->file_ = std::make_shared<OpenFile>(fd, path);
-
-    return log;
-}
 
 void Log::log(Level lvl, int err, const char* fmt, ...) const noexcept
 {
@@ -163,6 +140,39 @@ void Log::Printf(int err, const char* fmt, ...) noexcept
     *p++ = '\n';
 
     ::write(STDERR_FILENO, errstr, p - errstr);
+}
+
+LogPtr Init_new_log(const char* prefix)
+{
+    LogPtr log = std::make_shared<Log>();
+    log->level_ = Log::NOTICE;
+
+    const char* name = LNX_ERROR_LOG_PATH;
+    size_t nlen = std::strlen(name);
+
+    if (nlen == 0) {
+        log->file_ = std::make_shared<OpenFile>(STDERR_FILENO, "");
+        return log;
+    }
+
+    std::string path;
+    if (Path(name).is_relative()) {
+        path = prefix;
+        Path::Tail_separator(path);
+    }
+    path += name;
+
+    int fd = ::open(path.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0644);
+    if (fd == -1) {
+        Log::Printf(errno, "[alert] could not open error log file: "
+                           "open() \"%s\" failed", path.c_str());
+        fd = STDERR_FILENO;
+        path.clear();
+    }
+
+    log->file_ = std::make_shared<OpenFile>(fd, path);
+
+    return log;
 }
 
 const Log* Get_file_log(const Log* head) noexcept
@@ -271,11 +281,29 @@ const char* Log_set_levels_(const Conf& cf, Log* log) noexcept
             }
         }
 
+        for (uint n = 0, d = Log::DEBUG_FIRST; d <= Log::DEBUG_LAST; d <<= 1, ++n) {
+            if (values[i] == Debug_levels_[n]) {
+                if (log->level() & ~Log::DEBUG_ALL) {
+                    cf.log_error(Log::EMERG, "invalid log level \"%s\"",
+                                 values[i].c_str());
+                    return CONF_ERROR;
+                }
+
+                log->set_debug_level(Log::Level(d));
+
+                found = true;
+                break;
+            }
+        }
+
         if (!found) {
             cf.log_error(Log::EMERG, "invalid log level \"%s\"", values[i].c_str());
             return CONF_ERROR;
         }
     }
+
+    if (log->level() == Log::DEBUG)
+        log->set_level(Log::DEBUG_ALL);
 
     return CONF_OK;
 }

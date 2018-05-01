@@ -107,7 +107,7 @@ rc_t Poll_add_event_(Event* ev, int event, int /*flags*/)
         return OK;
     }
 
-    Log_error(ev->log, Log::DEBUG, 0,
+    Log_debug(ev->log, Log::DEBUG_EVENT, 0,
               "poll add event: fd:%d ev:%d", c->fd, event);
 
     Event* e = (event == POLLIN ? c->write : c->read);
@@ -118,7 +118,7 @@ rc_t Poll_add_event_(Event* ev, int event, int /*flags*/)
         Events_[nEvents_].revents = 0;
         ev->index = nEvents_++;
     } else {
-        Log_error(ev->log, Log::DEBUG, 0, "poll add index: %u", e->index);
+        Log_debug(ev->log, Log::DEBUG_EVENT, 0, "poll add index: %u", e->index);
 
         Events_[e->index].events |= (short) event;
         ev->index = e->index;
@@ -139,7 +139,7 @@ rc_t Poll_del_event_(Event* ev, int event, int /*flags*/)
         return OK;
     }
 
-    Log_error(ev->log, Log::DEBUG, 0,
+    Log_debug(ev->log, Log::DEBUG_EVENT, 0,
               "poll del event: fd:%d ev:%d", c->fd, event);
 
     Event* e = (event == POLLIN ? c->write : c->read);
@@ -162,7 +162,7 @@ rc_t Poll_del_event_(Event* ev, int event, int /*flags*/)
             }
         }
     } else {
-        Log_error(ev->log, Log::DEBUG, 0, "poll del index: %u", e->index);
+        Log_debug(ev->log, Log::DEBUG_EVENT, 0, "poll del index: %u", e->index);
 
         Events_[e->index].events &= (short) ~event;
     }
@@ -174,7 +174,7 @@ rc_t Poll_del_event_(Event* ev, int event, int /*flags*/)
 
 rc_t Poll_process_events_(Cycle* cycle, msec_t timer, int flags)
 {
-    Log_error(cycle->log(), Log::DEBUG, 0, "poll timer: %d", (int) timer);
+    Log_debug(cycle->log(), Log::DEBUG_EVENT, 0, "poll timer: %d", (int) timer);
 
     int ready = ::poll(Events_.data(), (int) nEvents_, (int) timer);
 
@@ -183,7 +183,8 @@ rc_t Poll_process_events_(Cycle* cycle, msec_t timer, int flags)
     if (flags & UPDATE_TIME || Event_timer_alarm)
         Time_update();
 
-    Log_error(cycle->log(), Log::DEBUG, 0, "poll ready %d of %u", ready, nEvents_);
+    Log_debug(cycle->log(), Log::DEBUG_EVENT, 0,
+              "poll ready %d of %u", ready, nEvents_);
 
     if (err) {
         Log::Level level;

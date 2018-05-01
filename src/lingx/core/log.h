@@ -12,14 +12,27 @@ class Log {
 public:
     enum Level {
         STDERR = 0,
-        EMERG,
-        ALERT,
-        CRIT,
-        ERROR,
-        WARN,
-        NOTICE,
-        INFO,
-        DEBUG
+        EMERG  = 1,
+        ALERT  = 2,
+        CRIT   = 3,
+        ERROR  = 4,
+        WARN   = 5,
+        NOTICE = 6,
+        INFO   = 7,
+        DEBUG  = 8,
+
+        DEBUG_CORE   = 0x010,
+        DEBUG_ALLOC  = 0x020,
+        DEBUG_MUTEX  = 0x040,
+        DEBUG_EVENT  = 0x080,
+        DEBUG_HTTP   = 0x100,
+        DEBUG_MAIL   = 0x200,
+        DEBUG_STREAM = 0x400,
+
+        DEBUG_FIRST      = DEBUG_CORE,
+        DEBUG_LAST       = DEBUG_STREAM,
+        DEBUG_CONNECTION = 0x80000000,
+        DEBUG_ALL        = 0x7ffffff0
     };
 
     Log(const Log&) = delete;
@@ -41,6 +54,9 @@ public:
 
     void set_level(Level lvl) noexcept
     { level_ = lvl; }
+
+    void set_debug_level(Level lvl) noexcept
+    { level_ = Level(level_ | lvl); }
 
     void set_file(const OpenFilePtr& file) noexcept
     { file_ = file; }
@@ -74,6 +90,12 @@ extern bool Use_stderr;
     do {                                                                     \
         if ((plog) && (plog)->level() >= lvl)                                \
             (plog)->log(lvl, err, __VA_ARGS__);                              \
+    } while (0)
+
+#define Log_debug(plog, lvl, err, ...)                                       \
+    do {                                                                     \
+        if ((plog) && (plog)->level() & lvl)                                 \
+            (plog)->log(Log::DEBUG, err, __VA_ARGS__);                       \
     } while (0)
 
 #endif

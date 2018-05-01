@@ -32,7 +32,7 @@ void Single_process_cycle(const CyclePtr& cycle)
     }
 
     for ( ;; ) {
-        Log_error(cycle->log(), Log::DEBUG, 0, "worker cycle");
+        Log_debug(cycle->log(), Log::DEBUG_EVENT, 0, "worker cycle");
 
         Process_events_and_timers(cycle);
 

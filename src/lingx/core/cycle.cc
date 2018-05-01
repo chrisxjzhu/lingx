@@ -105,7 +105,9 @@ rc_t Cycle::log_redirect_stderr() noexcept
      if (log_use_stderr_)
         return OK;
 
+    /* file log always exists when we are called */
     int fd = log_->file()->fd();
+
     if (fd != STDERR_FILENO) {
         if (::dup2(fd, STDERR_FILENO) == -1) {
             Log_error(log_, Log::ALERT, errno, "dup2(, STDERR_FILENO) failed");

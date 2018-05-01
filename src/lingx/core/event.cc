@@ -96,7 +96,7 @@ void Process_events_and_timers(const CyclePtr& cycle)
 
     delta = Current_msec - delta;
 
-    Log_error(cycle->log(), Log::DEBUG, 0, "timer delta: %lu", delta);
+    Log_debug(cycle->log(), Log::DEBUG_EVENT, 0, "timer delta: %lu", delta);
 
     Event_process_posted(cycle, &Posted_accept_events);
 
