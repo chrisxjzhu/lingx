@@ -29,6 +29,7 @@ std::vector<Command> Events_commands_ {
         "events",
         MAIN_CONF|CONF_BLOCK|CONF_NOARGS,
         Events_block_,
+        0,
         0
     }
 };
@@ -45,6 +46,7 @@ std::vector<Command> Event_core_commands_ {
         "multi_accept",
         EVENT_CONF|CONF_FLAG,
         Set_flag_slot,
+        0,
         offsetof(EventConf, multi_accept)
     }
 };

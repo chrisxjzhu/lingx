@@ -55,8 +55,9 @@ class Conf;
 
 struct Command {
     std::string_view name;
-    int type = 0;
+    int type;
     const char *(*set)(const Conf&, const Command&, MConfPtr&);
+    uint conf;
     size_t offset;
 };
 
@@ -83,7 +84,10 @@ public:
     { return args_; }
 
     void set_ctxs(std::vector<MConfPtr>* ctxs) noexcept
-    { ctxs_ = ctxs; }
+    { set_ctxs(ctxs, ctxs->size()); }
+
+    void set_ctxs(std::vector<MConfPtr>* ctxs, size_t size) noexcept
+    { ctxs_ = ctxs; ctxs_size_ = size; }
 
     void set_module_type(int type) noexcept
     { module_type_ = type; }
@@ -110,6 +114,7 @@ private:
     ConfFile* conf_file_ = nullptr;
 
     std::vector<MConfPtr>* ctxs_ = nullptr;
+    size_t ctxs_size_ = 0;
     int module_type_ = 0;
     int cmd_type_ = 0;
 
@@ -121,6 +126,13 @@ void Conf_init_value(T& conf, T val)
 {
     if (conf == (T) UNSET)
         conf = val;
+}
+
+template <typename T>
+void Conf_merge_value(T& conf, T prev, T val)
+{
+    if (conf == (T) UNSET)
+        conf = (prev == (T) UNSET) ? val : prev;
 }
 
 const char* Set_flag_slot(const Conf& cf, const Command& cmd, MConfPtr& conf);

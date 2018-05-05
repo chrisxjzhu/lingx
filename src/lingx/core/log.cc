@@ -45,6 +45,7 @@ std::vector<Command> Errlog_commands_ {
         "error_log",
          MAIN_CONF|CONF_1MORE,
          Error_log,
+         0,
          0
     }
 };

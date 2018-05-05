@@ -482,7 +482,8 @@ rc_t Conf::handle_(int last) noexcept
             MConfPtr dummy;
 
             uint idx = (cmd.type & MAIN_CONF) ? mod.index()
-                                              : mod.ctx_index();
+                     : (cmd.conf * ctxs_size_ + mod.ctx_index());
+
             MConfPtr& conf = ctxs_ ? (*ctxs_)[idx] : dummy;
 
             /* TODO: catch exceptions? */

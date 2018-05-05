@@ -37,12 +37,14 @@ std::vector<Command> Core_commands_ {
         "daemon",
          MAIN_CONF|CONF_FLAG,
          Set_flag_slot,
+         0,
          offsetof(CoreConf, daemon)
     },
     Command {
         "master_process",
          MAIN_CONF|CONF_FLAG,
          Set_flag_slot,
+         0,
          offsetof(CoreConf, master)
     }
 };

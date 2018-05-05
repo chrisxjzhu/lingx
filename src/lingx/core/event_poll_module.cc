@@ -16,7 +16,7 @@ namespace {
 std::vector<struct pollfd> Events_;
 uint nEvents_ = 0;
 
-const char* Poll_init_conf_(Cycle* cycle, MConf* conf);
+const char* Event_poll_init_conf_(Cycle* cycle, MConf* conf);
 
 rc_t Poll_init_(Cycle* cycle);
 void Poll_done_(Cycle* cycle);
@@ -24,10 +24,10 @@ rc_t Poll_add_event_(Event* ev, int event, int flags);
 rc_t Poll_del_event_(Event* ev, int event, int flags);
 rc_t Poll_process_events_(Cycle* cycle, msec_t timer, int flags);
 
-EventModuleCtx Poll_module_ctx_ {
+EventModuleCtx Event_poll_module_ctx_ {
     "poll",
     nullptr,
-    Poll_init_conf_,
+    Event_poll_init_conf_,
     {
         Poll_add_event_,
         Poll_del_event_,
@@ -44,9 +44,9 @@ EventModuleCtx Poll_module_ctx_ {
 
 }
 
-Module Poll_module {
-    "lnx_poll_module",
-    Poll_module_ctx_,
+Module Event_poll_module {
+    "lnx_event_poll_module",
+    Event_poll_module_ctx_,
     {},
     EVENT_MODULE,
     nullptr,
@@ -55,12 +55,12 @@ Module Poll_module {
 
 namespace {
 
-const char* Poll_init_conf_(Cycle* cycle, MConf*)
+const char* Event_poll_init_conf_(Cycle* cycle, MConf*)
 {
     std::shared_ptr<EventConf> ecf = Get_event_conf(EventConf, cycle, Event_core_module);
 
     /* It's not me. That's fine. */
-    if (ecf->use != Poll_module.ctx_index())
+    if (ecf->use != Event_poll_module.ctx_index())
         return CONF_OK;
 
     return CONF_OK;
@@ -82,7 +82,7 @@ rc_t Poll_init_(Cycle* cycle)
 
     Io = Os_io;
 
-    Event_actions = Poll_module_ctx_.actions;
+    Event_actions = Event_poll_module_ctx_.actions;
 
     Event_flags = USE_LEVEL_EVENT|USE_FD_EVENT;
 
