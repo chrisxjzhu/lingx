@@ -14,7 +14,16 @@ const char* Http_core_init_main_conf_(const Conf& cf, MConf* conf);
 const char* Http_core_merge_srv_conf_(const Conf& cf, const MConf* prev, MConf* conf);
 const char* Http_core_merge_loc_conf_(const Conf& cf, const MConf* prev, MConf* conf);
 
+const char* Http_core_server_(const Conf& cf, const Command& cmd, MConfPtr& dummy);
+
 std::vector<Command> Http_core_commands_ {
+    Command {
+        "server",
+        HTTP_MAIN_CONF|CONF_BLOCK|CONF_NOARGS,
+        Http_core_server_,
+        0,
+        0
+    }
 };
 
 HttpModuleCtx Http_core_module_ctx_ {
@@ -77,6 +86,11 @@ const char* Http_core_merge_srv_conf_(const Conf&, const MConf*, MConf*)
 }
 
 const char* Http_core_merge_loc_conf_(const Conf&, const MConf*, MConf*)
+{
+    return CONF_OK;
+}
+
+const char* Http_core_server_(const Conf& cf, const Command& cmd, MConfPtr&)
 {
     return CONF_OK;
 }
