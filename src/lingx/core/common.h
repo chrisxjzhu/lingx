@@ -40,8 +40,17 @@ class Conf;
 struct MConf {};
 using  MConfPtr = std::shared_ptr<MConf>;
 
-struct MConfs : MConf {
-    std::vector<MConfPtr> ctxs;
+using ConfCtx = std::vector<MConfPtr>;
+using ConfCtxPtr = std::shared_ptr<ConfCtx>;
+
+struct EventConfCtx : MConf {
+    ConfCtxPtr conf;
+};
+
+struct HttpConfCtx : MConf {
+    ConfCtxPtr main_conf;
+    ConfCtxPtr srv_conf;
+    ConfCtxPtr loc_conf;
 };
 
 struct Command;

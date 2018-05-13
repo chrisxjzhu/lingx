@@ -31,6 +31,8 @@ CoreModuleCtx Http_module_ctx_ {
 
 }
 
+uint Http_max_module = 0;
+
 Module Http_module {
     "lnx_http_module",
     Http_module_ctx_,
@@ -47,13 +49,15 @@ const char* Http_block_(const Conf& cf, const Command&, MConfPtr& conf)
     if (conf.get())
         return "is duplicate";
 
-    std::shared_ptr<MConfs> hconfs = std::make_shared<MConfs>();
+    std::shared_ptr<HttpConfCtx> conf_ctx = std::make_shared<HttpConfCtx>();
 
-    conf = hconfs;
+    conf = conf_ctx;
 
-    uint http_max_module = cf.cycle()->count_modules(HTTP_MODULE);
+    Http_max_module = cf.cycle()->count_modules(HTTP_MODULE);
 
-    hconfs->ctxs.resize(http_max_module * 3);
+    conf_ctx->main_conf = std::make_shared<ConfCtx>(Http_max_module);
+    conf_ctx->srv_conf = std::make_shared<ConfCtx>(Http_max_module);
+    conf_ctx->srv_conf = std::make_shared<ConfCtx>(Http_max_module);
 
     for (const Module& mod : cf.cycle()->modules()) {
         if (mod.type() != HTTP_MODULE)
@@ -63,26 +67,26 @@ const char* Http_block_(const Conf& cf, const Command&, MConfPtr& conf)
         uint mi = mod.ctx_index();
 
         if (ctx.create_main_conf) {
-            hconfs->ctxs[mi] = ctx.create_main_conf(cf);
-            if (hconfs->ctxs[mi] == nullptr)
+            (*conf_ctx->main_conf)[mi] = ctx.create_main_conf(cf);
+            if ((*conf_ctx->main_conf)[mi] == nullptr)
                 return CONF_ERROR;
         }
 
         if (ctx.create_srv_conf) {
-            hconfs->ctxs[http_max_module + mi] = ctx.create_srv_conf(cf);
-            if (hconfs->ctxs[http_max_module + mi] == nullptr)
+            (*conf_ctx->srv_conf)[mi] = ctx.create_srv_conf(cf);
+            if ((*conf_ctx->srv_conf)[mi] == nullptr)
                 return CONF_ERROR;
         }
 
         if (ctx.create_loc_conf) {
-            hconfs->ctxs[http_max_module * 2 + mi] = ctx.create_loc_conf(cf);
-            if (hconfs->ctxs[http_max_module * 2 + mi] == nullptr)
+            (*conf_ctx->loc_conf)[mi] = ctx.create_loc_conf(cf);
+            if ((*conf_ctx->loc_conf)[mi] == nullptr)
                 return CONF_ERROR;
         }
     }
 
     Conf ncf = cf;
-    ncf.set_ctxs(&hconfs->ctxs, http_max_module);
+    ncf.set_ctx(&conf_ctx->main_conf);
 
     for (const Module& mod : ncf.cycle()->modules()) {
         if (mod.type() != HTTP_MODULE)
@@ -111,7 +115,7 @@ const char* Http_block_(const Conf& cf, const Command&, MConfPtr& conf)
      */
 
     HttpCoreMainConfPtr cmcf = std::static_pointer_cast<HttpCoreMainConf>
-                               (hconfs->ctxs[Http_core_module.ctx_index()]);
+                       ((*conf_ctx->main_conf)[Http_core_module.ctx_index()]);
 
     for (const Module& mod : ncf.cycle()->modules()) {
         if (mod.type() != HTTP_MODULE)
@@ -121,7 +125,7 @@ const char* Http_block_(const Conf& cf, const Command&, MConfPtr& conf)
         uint mi = mod.ctx_index();
 
         if (ctx.init_main_conf) {
-            const char* rv = ctx.init_main_conf(ncf, hconfs->ctxs[mi].get());
+            const char* rv = ctx.init_main_conf(ncf, (*conf_ctx->main_conf)[mi].get());
             if (rv != CONF_OK)
                 return rv;
         }
@@ -134,9 +138,9 @@ const char* Http_block_(const Conf& cf, const Command&, MConfPtr& conf)
     return CONF_OK;
 }
 
-const char* Http_merge_servers_(const Conf& cf,
-                                const HttpCoreMainConfPtr& cmcf,
-                                const HttpModuleCtx& ctx, uint ctx_index)
+const char* Http_merge_servers_(const Conf& /*cf*/,
+                                const HttpCoreMainConfPtr& /*cmcf*/,
+                                const HttpModuleCtx& /*ctx*/, uint /*ctx_index*/)
 {
     return CONF_OK;
 }

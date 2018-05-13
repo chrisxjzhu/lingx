@@ -254,7 +254,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
     cycle->conf_file_ = old_cycle->conf_file_;
     cycle->conf_param_ = old_cycle->conf_param_;
 
-    cycle->conf_ctxs_.resize(Max_modules_n);
+    cycle->conf_ctx_ = std::make_shared<ConfCtx>(Max_modules_n);
 
     cycle->modules_ = Modules;
 
@@ -266,13 +266,13 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
 
         if (ctx.create_conf) {
             MConfPtr cf = ctx.create_conf(cycle.get());
-            cycle->conf_ctxs_[mod.index()] = cf;
+            (*cycle->conf_ctx_)[mod.index()] = cf;
         }
     }
 
     Conf conf(cycle);
     conf.set_log(log);
-    conf.set_ctxs(&cycle->conf_ctxs());
+    conf.set_ctx(&cycle->conf_ctx());
     conf.set_module_type(CORE_MODULE);
     conf.set_cmd_type(MAIN_CONF);
 
@@ -294,7 +294,7 @@ CyclePtr Init_new_cycle(const CyclePtr& old_cycle)
         const CoreModuleCtx& ctx = static_cast<const CoreModuleCtx&>(mod.ctx());
 
         if (ctx.init_conf) {
-            if (ctx.init_conf(cycle.get(), cycle->conf_ctxs_[mod.index()].get())
+            if (ctx.init_conf(cycle.get(), (*cycle->conf_ctx_)[mod.index()].get())
                 == CONF_ERROR)
             {
                 return nullptr;

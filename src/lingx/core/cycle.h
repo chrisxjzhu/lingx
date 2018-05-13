@@ -19,10 +19,10 @@ public:
     Cycle();
 
     bool is_init_cycle() const noexcept
-    { return conf_ctxs_.empty(); }
+    { return conf_ctx_ == nullptr; }
 
-    std::vector<MConfPtr>& conf_ctxs() noexcept
-    { return conf_ctxs_; }
+    const ConfCtxPtr& conf_ctx() noexcept
+    { return conf_ctx_; }
 
     const std::vector<Connection*>& files() const noexcept
     { return files_; }
@@ -83,7 +83,7 @@ private:
 
     uint count_module_ctx_index_(int type, uint index) const noexcept;
 
-    std::vector<MConfPtr> conf_ctxs_;
+    ConfCtxPtr conf_ctx_;
 
     Log new_log_;
     const Log* log_ = nullptr;

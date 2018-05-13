@@ -132,7 +132,8 @@ void Process_events_and_timers(const CyclePtr& cycle);
 
 #define Get_event_conf(type, cycle, module)                                  \
     std::static_pointer_cast<type>(                                          \
-        Get_conf(MConfs, cycle, Events_module)->ctxs[(module).ctx_index()]   \
+        (*Get_conf(EventConfCtx, cycle, Events_module)->conf)                \
+        [(module).ctx_index()]                                               \
     )
 
 #endif

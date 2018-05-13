@@ -89,11 +89,11 @@ public:
     const std::vector<std::string>& args() const noexcept
     { return args_; }
 
-    void set_ctxs(std::vector<MConfPtr>* ctxs) noexcept
-    { set_ctxs(ctxs, ctxs->size()); }
+    const ConfCtxPtr* ctx() const noexcept
+    { return ctx_; }
 
-    void set_ctxs(std::vector<MConfPtr>* ctxs, size_t size) noexcept
-    { ctxs_ = ctxs; ctxs_size_ = size; }
+    void set_ctx(const ConfCtxPtr* ctx) noexcept
+    { ctx_ = ctx; }
 
     void set_module_type(int type) noexcept
     { module_type_ = type; }
@@ -119,8 +119,7 @@ private:
     Cycle* cycle_ = nullptr;
     ConfFile* conf_file_ = nullptr;
 
-    std::vector<MConfPtr>* ctxs_ = nullptr;
-    size_t ctxs_size_ = 0;
+    const ConfCtxPtr* ctx_ = nullptr;
     int module_type_ = 0;
     int cmd_type_ = 0;
 

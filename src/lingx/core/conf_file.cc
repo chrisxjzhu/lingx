@@ -479,12 +479,19 @@ rc_t Conf::handle_(int last) noexcept
 
             /* set up the directive's configuration context */
 
+            const ConfCtxPtr* ctx = nullptr;
+            uint idx = 0;
+
+            if (cmd.type & MAIN_CONF) {
+                ctx = ctx_;
+                idx = mod.index();
+            } else if (ctx_) {
+                ctx = ctx_ + cmd.conf;
+                idx = mod.ctx_index();
+            }
+
             MConfPtr dummy;
-
-            uint idx = (cmd.type & MAIN_CONF) ? mod.index()
-                     : (cmd.conf * ctxs_size_ + mod.ctx_index());
-
-            MConfPtr& conf = ctxs_ ? (*ctxs_)[idx] : dummy;
+            MConfPtr& conf = (ctx && *ctx) ? (**ctx)[idx] : dummy;
 
             /* TODO: catch exceptions? */
             const char* rv = cmd.set(*this, cmd, conf);
